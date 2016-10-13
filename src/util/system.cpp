@@ -948,20 +948,22 @@ bool ArgsManager::ReadConfigFiles(std::string& error, bool ignore_invalid_keys)
 std::string ArgsManager::GetChainName() const
 {
     LOCK(cs_args);
-    bool fRegTest = ArgsManagerHelper::GetNetBoolArg(*this, "-regtest");
-    bool fTestNet = ArgsManagerHelper::GetNetBoolArg(*this, "-testnet");
-    bool signet   = ArgsManagerHelper::GetNetBoolArg(*this, "-signet");
+    const bool fRegTest = ArgsManagerHelper::GetNetBoolArg(*this, "-regtest");
+    const bool fTestNet = ArgsManagerHelper::GetNetBoolArg(*this, "-testnet");
+    const bool fSigNet = ArgsManagerHelper::GetNetBoolArg(*this, "-signet");
+    const bool is_chain_arg_set = IsArgSet("-chain");
 
-    if (fTestNet + fRegTest + signet > 1)
-        throw std::runtime_error("Invalid combination of -regtest, -testnet, and -signet.");
+    if ((int)is_chain_arg_set + (int)fRegTest + (int)fTestNet + (int)fSigNet > 1) {
+        throw std::runtime_error("Invalid combination of -regtest, -testnet, -signet and -chain. Can use at most one.");
+    }
     if (fRegTest)
         return CBaseChainParams::REGTEST;
     if (fTestNet)
         return CBaseChainParams::TESTNET;
-    if (signet) {
+    if (fSigNet) {
         return CBaseChainParams::SIGNET;
     }
-    return CBaseChainParams::MAIN;
+    return GetArg("-chain", CBaseChainParams::MAIN);
 }
 
 bool RenameOver(fs::path src, fs::path dest)
