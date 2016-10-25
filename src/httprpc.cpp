@@ -251,6 +251,9 @@ bool StartHTTPRPC()
 #ifdef ENABLE_WALLET
     // ifdef can be removed once we switch to better endpoint support and API versioning
     RegisterHTTPHandler("/wallet/", false, HTTPReq_JSONRPC);
+
+    void JSONRPCRequestWalletResolver(JSONRPCRequest& jreq, const HTTPRequest& httpreq);
+    RegisterJSONRPCRequestPreparer(JSONRPCRequestWalletResolver);
 #endif
     assert(EventBase());
     httpRPCTimerInterface = MakeUnique<HTTPRPCTimerInterface>(EventBase());
