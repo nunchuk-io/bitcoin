@@ -102,6 +102,8 @@ Unixy OSes by entering the following in a terminal:
     echo "ad4e8c27c561ad8248d5ebc1d36eb172f884057bfeb2c22ead823f59fa8c3dff  debian-8.5.0-amd64-netinst.iso" | sha256sum -c
     # (must return OK)
 
+Replace `sha256sum` with `shasum` on OSX.
+
 Then start the VM. On the first launch you will be asked for a CD or DVD image. Choose the downloaded ISO.
 
 ![](gitian-building/select_startup_disk.png)
@@ -200,28 +202,6 @@ To select a different button, press `Tab`.
 
 ![](gitian-building/debian_install_22_finish_installation.png)
 
-
-After Installation
--------------------
-The next step in the guide involves logging in as root via SSH.
-SSH login for root users is disabled by default, so we'll enable that now.
-
-Login to the VM using username `root` and the root password you chose earlier.
-You'll be presented with a screen similar to this.
-
-![](gitian-building/debian_root_login.png)
-
-Type:
-
-```
-sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
-```
-and press enter. Then,
-```
-/etc/init.d/ssh restart
-```
-and enter to restart SSH. Logout by typing 'logout' and pressing 'enter'.
-
 Connecting to the VM
 ----------------------
 
@@ -229,14 +209,14 @@ After the VM has booted you can connect to it using SSH, and files can be copied
 Connect to `localhost`, port `22222` (or the port configured when installing the VM).
 On Windows you can use [putty](http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html) and [WinSCP](http://winscp.net/eng/index.php).
 
-For example, to connect as `root` from a Linux command prompt use
+For example, to connect as `debian` from a Linux command prompt use
 
-    $ ssh root@localhost -p 22222
+    $ ssh debian@localhost -p 22222
     The authenticity of host '[localhost]:22222 ([127.0.0.1]:22222)' can't be established.
     RSA key fingerprint is ae:f5:c8:9f:17:c6:c7:1b:c2:1b:12:31:1d:bb:d0:c7.
     Are you sure you want to continue connecting (yes/no)? yes
     Warning: Permanently added '[localhost]:22222' (RSA) to the list of known hosts.
-    root@localhost's password: (enter root password configured during install)
+    debian@localhost's password: (enter user password configured during install)
 
     The programs included with the Debian GNU/Linux system are free software;
     the exact distribution terms for each program are described in the
@@ -244,30 +224,53 @@ For example, to connect as `root` from a Linux command prompt use
 
     Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
     permitted by applicable law.
-    root@debian:~#
+    debian@debian:~#
 
-Replace `root` with `debian` to log in as user.
+Optional - Easier login to the VM
+---------------------------------
+
+You'll need to generate an SSH key, e.g. by following the instructions under "Generating a new SSH key" [here](https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
+
+After that, login to the VM and enter:
+
+```bash
+mkdir .ssh
+```
+
+On your machine edit or create `~/.ssh/config` and add:
+
+```bash
+Host gitian
+    HostName localhost
+    Port 22222
+    User debian
+```
+
+Open a new terminal tab and enter:
+
+```bash
+scp ~/.ssh/id_rsa.pub gitian:.ssh/authorized_keys
+```
+
+Next time you need to login to the VM, just use: `ssh gitian`
 
 Setting up Debian for Gitian building
 --------------------------------------
 
 In this section we will be setting up the Debian installation for Gitian building.
 
-First we need to log in as `root` to set up dependencies and make sure that our
-user can use the sudo command. Type/paste the following in the terminal:
+First we need to set up dependencies, for which our user needs to use sudo. Type/paste the following in the terminal:
 
 ```bash
-apt-get install git ruby sudo apt-cacher-ng qemu-utils debootstrap lxc python-cheetah parted kpartx bridge-utils make ubuntu-archive-keyring curl
-adduser debian sudo
+sudo apt-get install git ruby sudo apt-cacher-ng qemu-utils debootstrap python-cheetah parted kpartx bridge-utils make ubuntu-archive-keyring curl apache2 qemu-kvm qemu-utils
 ```
 
-Then set up LXC and the rest with the following, which is a complex jumble of settings and workarounds:
+**Note**: When sudo asks for a password, enter the password for the user *debian* not for *root*.
+
+Then set up LXC and the rest with the following, which is a complex jumble of settings and workarounds. These must be run as root, not using sudo:
 
 ```bash
-# the version of lxc-start in Debian needs to run as root, so make sure
-# that the build script can execute it without providing a password
-echo "%sudo ALL=NOPASSWD: /usr/bin/lxc-start" > /etc/sudoers.d/gitian-lxc
-echo "%sudo ALL=NOPASSWD: /usr/bin/lxc-execute" >> /etc/sudoers.d/gitian-lxc
+su root
 # make /etc/rc.local script that sets up bridge between guest and host
 echo '#!/bin/sh -e' > /etc/rc.local
 echo 'brctl addbr br0' >> /etc/rc.local
@@ -275,12 +278,17 @@ echo 'ifconfig br0 10.0.3.2/24 up' >> /etc/rc.local
 echo 'iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE' >> /etc/rc.local
 echo 'echo 1 > /proc/sys/net/ipv4/ip_forward' >> /etc/rc.local
 echo 'exit 0' >> /etc/rc.local
+exit
+```
+
+These command can be run as a normal user:
+```
 # make sure that USE_LXC is always set when logging in as debian,
 # and configure LXC IP addresses
 echo 'export USE_LXC=1' >> /home/debian/.profile
 echo 'export GITIAN_HOST_IP=10.0.3.2' >> /home/debian/.profile
 echo 'export LXC_GUEST_IP=10.0.3.5' >> /home/debian/.profile
-reboot
+sudo reboot
 ```
 
 At the end the VM is rebooted to make sure that the changes take effect. The steps in this
@@ -301,7 +309,6 @@ echo "76cbf8c52c391160b2641e7120dbade5afded713afaa6032f733a261f13e6a8e  vm-build
 tar -zxvf vm-builder_0.12.4+bzr494.orig.tar.gz
 cd vm-builder-0.12.4+bzr494
 sudo python setup.py install
-cd ..
 ```
 
 **Note**: When sudo asks for a password, enter the password for the user *debian* not for *root*.
@@ -309,6 +316,7 @@ cd ..
 Clone the git repositories for bitcoin and Gitian.
 
 ```bash
+cd ~
 git clone https://github.com/devrandom/gitian-builder.git
 git clone https://github.com/bitcoin/bitcoin
 git clone https://github.com/bitcoin-core/gitian.sigs.git
@@ -327,17 +335,28 @@ Execute the following as user `debian`:
 
 ```bash
 cd gitian-builder
-bin/make-base-vm --lxc --arch amd64 --suite trusty
+bin/make-base-vm --arch amd64 --suite trusty
 ```
 
-There will be a lot of warnings printed during the build of the image. These can be ignored.
+If this fails with an error about your suoders file having been modified, try [this](https://stackoverflow.com/questions/26349191/fatal-ambiguous-argument-branch-name-both-revision-and-filename).
 
 **Note**: When sudo asks for a password, enter the password for the user *debian* not for *root*.
 
 Getting and building the inputs
 --------------------------------
 
-At this point you have two options, you can either use the automated script (found in [contrib/gitian-build.sh](/contrib/gitian-build.sh)) or you could manually do everything by following this guide. If you're using the automated script, then run it with the "--setup" command. Afterwards, run it with the "--build" command (example: "contrib/gitian-build.sh -b signer 0.13.0"). Otherwise ignore this.
+At this point you have two options, you can either use the automated script (found in [contrib/gitian-build.sh](/contrib/gitian-build.sh)) or you could manually do everything by following this guide.
+
+To use the automated script:
+
+```bash
+cd ~
+bitcoin/contrib/gitian-build.sh --kml --build signer 0.14.0
+```
+
+Replace `signer` with your email. This will automatically checkout the release tag.
+
+This will skip OSX, see [here](https://github.com/bitcoin/bitcoin/blob/master/doc/README_osx.md) for more information.
 
 Follow the instructions in [doc/release-process.md](release-process.md#fetch-and-create-inputs-first-time-or-when-dependency-versions-change)
 in the bitcoin repository under 'Fetch and create inputs' to install sources which require
