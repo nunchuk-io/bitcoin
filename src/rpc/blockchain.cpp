@@ -973,9 +973,6 @@ static UniValue SoftForkMajorityDesc(int version, CBlockIndex* pindex, const Con
         case 3:
             activated = pindex->nHeight >= consensusParams.BIP66Height;
             break;
-        case 4:
-            activated = pindex->nHeight >= consensusParams.BIP65Height;
-            break;
     }
     rv.push_back(Pair("status", activated));
     return rv;
