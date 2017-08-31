@@ -391,14 +391,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_CHECKSEQUENCEVERIFY:
                 {
-                    if (!(flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY)) {
-                        // not enabled; treat as a NOP3
-                        if (flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) {
-                            return set_error(serror, SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS);
-                        }
-                        break;
-                    }
-
                     if (stack.size() < 1)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
 
