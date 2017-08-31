@@ -200,13 +200,8 @@ bool CheckSignatureEncoding(const vector<unsigned char> &vchSig, unsigned int fl
     if (vchSig.size() == 0) {
         return true;
     }
-    if ((flags & (SCRIPT_VERIFY_DERSIG | SCRIPT_VERIFY_LOW_S | SCRIPT_VERIFY_STRICTENC)) != 0 && !IsValidSignatureEncoding(vchSig)) {
+    if ((flags) != 0 && !IsValidSignatureEncoding(vchSig)) {
         return set_error(serror, SCRIPT_ERR_SIG_DER);
-    } else if ((flags & SCRIPT_VERIFY_LOW_S) != 0 && !IsLowDERSignature(vchSig, serror)) {
-        // serror is set
-        return false;
-    } else if ((flags & SCRIPT_VERIFY_STRICTENC) != 0 && !IsDefinedHashtypeSignature(vchSig)) {
-        return set_error(serror, SCRIPT_ERR_SIG_HASHTYPE);
     }
     return true;
 }

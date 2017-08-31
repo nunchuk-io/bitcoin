@@ -52,7 +52,6 @@ static const unsigned int DUST_RELAY_TX_FEE = 1000;
  * blocks and we must accept those blocks.
  */
 static const unsigned int STANDARD_SCRIPT_VERIFY_FLAGS = MANDATORY_SCRIPT_VERIFY_FLAGS |
-                                                         SCRIPT_VERIFY_DERSIG |
                                                          SCRIPT_VERIFY_STRICTENC |
                                                          SCRIPT_VERIFY_MINIMALDATA |
                                                          SCRIPT_VERIFY_NULLDUMMY |
