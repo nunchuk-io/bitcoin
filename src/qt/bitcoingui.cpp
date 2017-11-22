@@ -41,7 +41,6 @@
 
 #include <QAction>
 #include <QApplication>
-#include <QComboBox>
 #include <QDateTime>
 #include <QDesktopWidget>
 #include <QDragEnterEvent>
@@ -469,12 +468,8 @@ void BitcoinGUI::createToolBars()
         overviewAction->setChecked(true);
 
 #ifdef ENABLE_WALLET
-        QWidget *spacer = new QWidget();
-        spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        toolbar->addWidget(spacer);
-
-        WalletSelector = new QComboBox();
-        connect(WalletSelector, SIGNAL(currentIndexChanged(const QString&)), this, SLOT(setCurrentWallet(const QString&)));
+        // TODO: add to menu
+        // connect(WalletSelector, SIGNAL(currentIndexChanged(const QString&)), this, SLOT(setCurrentWallet(const QString&)));
 #endif
     }
 }
@@ -548,14 +543,15 @@ bool BitcoinGUI::addWallet(WalletModel *walletModel)
         return false;
     const QString name = walletModel->getWalletName();
     setWalletActionsEnabled(true);
-    WalletSelector->addItem(name);
-    if (WalletSelector->count() == 2) {
-        WalletSelectorLabel = new QLabel();
-        WalletSelectorLabel->setText(tr("Wallet:") + " ");
-        WalletSelectorLabel->setBuddy(WalletSelector);
-        appToolBar->addWidget(WalletSelectorLabel);
-        appToolBar->addWidget(WalletSelector);
-    }
+    // TODO: what's this for?
+    // WalletSelector->addItem(name);
+    // if (WalletSelector->count() == 2) {
+    //     WalletSelectorLabel = new QLabel();
+    //     WalletSelectorLabel->setText(tr("Wallet:") + " ");
+    //     WalletSelectorLabel->setBuddy(WalletSelector);
+    //     appToolBar->addWidget(WalletSelectorLabel);
+    //     appToolBar->addWidget(WalletSelector);
+    // }
     rpcConsole->addWallet(walletModel);
     return walletFrame->addWallet(walletModel);
 }

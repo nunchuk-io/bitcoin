@@ -33,7 +33,6 @@ class ModalOverlay;
 
 QT_BEGIN_NAMESPACE
 class QAction;
-class QComboBox;
 class QProgressBar;
 class QProgressDialog;
 QT_END_NAMESPACE
@@ -112,9 +111,6 @@ private:
     QAction *openRPCConsoleAction;
     QAction *openAction;
     QAction *showHelpMessageAction;
-
-    QLabel *WalletSelectorLabel;
-    QComboBox *WalletSelector;
 
     QSystemTrayIcon *trayIcon;
     QMenu *trayIconMenu;
