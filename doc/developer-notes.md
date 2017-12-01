@@ -186,7 +186,7 @@ $ valgrind -v --leak-check=full src/bitcoind -printtoconsole
 
 LCOV can be used to generate a test coverage report based upon `make check`
 execution. LCOV must be installed on your system (e.g. the `lcov` package
-on Debian/Ubuntu).
+on Debian/Ubuntu, `brew install lcov` on OSX).
 
 To enable LCOV report generation during test runs:
 
