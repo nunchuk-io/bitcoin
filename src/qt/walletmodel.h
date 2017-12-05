@@ -38,8 +38,8 @@ class SendCoinsRecipient
 {
 public:
     explicit SendCoinsRecipient() : amount(0), fSubtractFeeFromAmount(false), nVersion(SendCoinsRecipient::CURRENT_VERSION) { }
-    explicit SendCoinsRecipient(const QString &addr, const QString &_label, const CAmount& _amount, const QString &_message):
-        address(addr), label(_label), amount(_amount), message(_message), fSubtractFeeFromAmount(false), nVersion(SendCoinsRecipient::CURRENT_VERSION) {}
+    explicit SendCoinsRecipient(const QString &addr, const QString &_label, const CAmount& _amount, const QString &_message, const bool& _no125):
+        address(addr), label(_label), amount(_amount), message(_message), no125(_no125), fSubtractFeeFromAmount(false), nVersion(SendCoinsRecipient::CURRENT_VERSION) {}
 
     // If from an unauthenticated payment request, this is used for storing
     // the addresses, e.g. address-A<br />address-B<br />address-C.
@@ -51,6 +51,9 @@ public:
     CAmount amount;
     // If from a payment request, this is used for storing the memo
     QString message;
+    
+    // Request that RBF should not be used
+    bool no125 = false;
 
     // If from a payment request, paymentRequest.IsInitialized() will be true
     PaymentRequestPlus paymentRequest;
@@ -69,6 +72,7 @@ public:
         std::string sAddress = address.toStdString();
         std::string sLabel = label.toStdString();
         std::string sMessage = message.toStdString();
+        std::string sNo125 = no125 ? "1" : "0";
         std::string sPaymentRequest;
         if (!ser_action.ForRead() && paymentRequest.IsInitialized())
             paymentRequest.SerializeToString(&sPaymentRequest);
@@ -79,6 +83,7 @@ public:
         READWRITE(sLabel);
         READWRITE(amount);
         READWRITE(sMessage);
+        READWRITE(sNo125);
         READWRITE(sPaymentRequest);
         READWRITE(sAuthenticatedMerchant);
 
@@ -87,6 +92,7 @@ public:
             address = QString::fromStdString(sAddress);
             label = QString::fromStdString(sLabel);
             message = QString::fromStdString(sMessage);
+            no125 = sNo125=="1";
             if (!sPaymentRequest.empty())
                 paymentRequest.parse(QByteArray::fromRawData(sPaymentRequest.data(), sPaymentRequest.size()));
             authenticatedMerchant = QString::fromStdString(sAuthenticatedMerchant);

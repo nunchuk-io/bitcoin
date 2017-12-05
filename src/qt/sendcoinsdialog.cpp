@@ -859,6 +859,8 @@ void SendCoinsDialog::coinControlUpdateLabels()
             CoinControlDialog::payAmounts.append(rcp.amount);
             if (rcp.fSubtractFeeFromAmount)
                 CoinControlDialog::fSubtractFeeFromAmount = true;
+            if (rcp.no125)
+                ui->optInRBF->setCheckState(Qt::Unchecked);
         }
     }
 

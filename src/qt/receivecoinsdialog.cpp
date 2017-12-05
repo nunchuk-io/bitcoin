@@ -137,7 +137,7 @@ void ReceiveCoinsDialog::on_receiveButton_clicked()
     /* Generate new receiving address */
     address = model->getAddressTableModel()->addRow(AddressTableModel::Receive, label, "");
     SendCoinsRecipient info(address, label,
-        ui->reqAmount->value(), ui->reqMessage->text());
+        ui->reqAmount->value(), ui->reqMessage->text(), false);
     ReceiveRequestDialog *dialog = new ReceiveRequestDialog(this);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->setModel(model->getOptionsModel());

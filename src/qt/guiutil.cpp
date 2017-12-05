@@ -172,7 +172,11 @@ bool parseBitcoinURI(const QUrl &uri, SendCoinsRecipient *out)
             i->first.remove(0, 4);
             fShouldReturnFalse = true;
         }
-
+        if (i->first == "no125" && i->second == "1")
+        {
+            rv.no125 = true;
+            fShouldReturnFalse = false;
+        }
         if (i->first == "label")
         {
             rv.label = i->second;
