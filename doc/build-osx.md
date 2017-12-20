@@ -105,7 +105,9 @@ Uncheck everything except Qt Creator during the installation process.
 7. In the "Projects" tab select "Manage Kits..."
 8. Select the default "Desktop" kit and select "Clang (x86 64bit in /usr/bin)" as compiler
 9. Select LLDB as debugger (you might need to set the path to your installation)
-10. Start debugging with Qt Creator
+10. Under Build & Run, select Build and change Make arguments from "all" to "bitcoin-qt check"
+11. Under Build & Run, select Run and set Executable to "bitcoin-qt"
+12. Start debugging with Qt Creator
 
 Notes
 -----

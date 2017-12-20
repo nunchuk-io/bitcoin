@@ -41,6 +41,7 @@ src/univalue/gen
 src/qt/*.moc
 src/qt/moc_*.cpp
 src/qt/forms/ui_*.h
+src/qt/bitcoin-qt.creator.user
 
 src/qt/test/moc*.cpp
 
