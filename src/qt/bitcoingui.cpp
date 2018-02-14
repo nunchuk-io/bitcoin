@@ -703,6 +703,12 @@ void BitcoinGUI::gotoSendCoinsPage(QString addr)
     if (walletFrame) walletFrame->gotoSendCoinsPage(addr);
 }
 
+void BitcoinGUI::gotoReplaceTransactionPage(QString tx_hash)
+{
+    sendCoinsAction->setChecked(true);
+    if (walletFrame) walletFrame->gotoReplaceTransactionPage(tx_hash);
+}
+
 void BitcoinGUI::gotoSignMessageTab(QString addr)
 {
     if (walletFrame) walletFrame->gotoSignMessageTab(addr);

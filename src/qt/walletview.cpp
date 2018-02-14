@@ -90,6 +90,9 @@ void WalletView::setBitcoinGUI(BitcoinGUI *gui)
     {
         // Clicking on a transaction on the overview page simply sends you to transaction history page
         connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), gui, SLOT(gotoHistoryPage()));
+    
+        // Navigate to send coins page when to edit a replaceable transaction
+        connect(transactionView, SIGNAL(editReplaceableTransaction(QString)), gui, SLOT(gotoReplaceTransactionPage(QString)));
 
         // Receive and report messages
         connect(this, SIGNAL(message(QString,QString,unsigned int)), gui, SLOT(message(QString,QString,unsigned int)));
@@ -190,6 +193,13 @@ void WalletView::gotoSendCoinsPage(QString addr)
 
     if (!addr.isEmpty())
         sendCoinsPage->setAddress(addr);
+}
+
+void WalletView::gotoReplaceTransactionPage(QString tx_hash)
+{
+    setCurrentWidget(sendCoinsPage);
+
+    sendCoinsPage->setTransaction(tx_hash);
 }
 
 void WalletView::gotoSignMessageTab(QString addr)

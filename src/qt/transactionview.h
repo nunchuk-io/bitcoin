@@ -58,6 +58,9 @@ public:
         MINIMUM_COLUMN_WIDTH = 23
     };
 
+Q_SIGNALS:
+    void editReplaceableTransaction(QString tx_hash);
+
 private:
     WalletModel *model;
     TransactionFilterProxy *transactionProxyModel;
@@ -76,7 +79,7 @@ private:
     QDateTimeEdit *dateFrom;
     QDateTimeEdit *dateTo;
     QAction *abandonAction;
-    QAction *bumpFeeAction;
+    QAction *replaceTransactionAction;
 
     QWidget *createDateRangeWidget();
 
@@ -100,7 +103,7 @@ private Q_SLOTS:
     void openThirdPartyTxUrl(QString url);
     void updateWatchOnlyColumn(bool fHaveWatchOnly);
     void abandonTx();
-    void bumpFee();
+    void replaceTransaction();
 
 Q_SIGNALS:
     void doubleClicked(const QModelIndex&);

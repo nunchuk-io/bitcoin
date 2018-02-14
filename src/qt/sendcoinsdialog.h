@@ -44,6 +44,7 @@ public:
     void setAddress(const QString &address);
     void pasteEntry(const SendCoinsRecipient &rv);
     bool handlePaymentRequest(const SendCoinsRecipient &recipient);
+    void setTransaction(const QString &tx_hash);
 
 public Q_SLOTS:
     void clear();
@@ -60,6 +61,7 @@ private:
     WalletModel *model;
     bool fNewRecipientAllowed;
     bool fFeeMinimized;
+    bool fReplaceTransaction;
     const PlatformStyle *platformStyle;
 
     // Process WalletModel::SendCoinsReturn and generate a pair consisting
@@ -91,6 +93,8 @@ private Q_SLOTS:
     void coinControlClipboardLowOutput();
     void coinControlClipboardChange();
     void setMinimumFee();
+    void updateReplaceTransactionControls();
+    void cancelReplaceTransaction();
     void updateFeeSectionControls();
     void updateMinFeeLabel();
     void updateSmartFeeLabel();

@@ -54,6 +54,7 @@ SendCoinsDialog::SendCoinsDialog(const PlatformStyle *_platformStyle, QWidget *p
     model(0),
     fNewRecipientAllowed(true),
     fFeeMinimized(true),
+    fReplaceTransaction(false),
     platformStyle(_platformStyle)
 {
     ui->setupUi(this);
@@ -154,6 +155,10 @@ void SendCoinsDialog::setModel(WalletModel *_model)
         connect(_model, SIGNAL(balanceChanged(CAmount,CAmount,CAmount,CAmount,CAmount,CAmount)), this, SLOT(setBalance(CAmount,CAmount,CAmount,CAmount,CAmount,CAmount)));
         connect(_model->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
         updateDisplayUnit();
+
+        // Replace transaction
+        connect(ui->pushButtonCancelReplace, SIGNAL(clicked()), this, SLOT(cancelReplaceTransaction()));
+        updateReplaceTransactionControls();
 
         // Coin Control
         connect(_model->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(coinControlUpdateLabels()));
@@ -505,6 +510,34 @@ bool SendCoinsDialog::handlePaymentRequest(const SendCoinsRecipient &rv)
     return true;
 }
 
+void SendCoinsDialog::setTransaction(const QString &tx_hash)
+{
+    CoinControlDialog::coinControl()->UnSelectAll();
+    ui->checkBoxCoinControlChange->setChecked(false);
+    ui->lineEditCoinControlChange->clear();
+    coinControlUpdateLabels();
+    SendCoinsDialog::clear();
+    fReplaceTransaction = true;
+    ui->labelTransactionId->setText(tx_hash);
+    updateReplaceTransactionControls();
+    ui->frameCoinControl->setEnabled(false);
+    ui->scrollArea->setEnabled(false);
+    ui->clearButton->setEnabled(false);
+    ui->addButton->setEnabled(false);
+}
+
+void SendCoinsDialog::cancelReplaceTransaction()
+{
+    SendCoinsDialog::clear();
+    fReplaceTransaction = false;
+    ui->labelTransactionId->setText("");
+    ui->frameCoinControl->setEnabled(true);
+    updateReplaceTransactionControls();
+    ui->scrollArea->setEnabled(true);
+    ui->clearButton->setEnabled(true);
+    ui->addButton->setEnabled(true);
+}
+
 void SendCoinsDialog::setBalance(const CAmount& balance, const CAmount& unconfirmedBalance, const CAmount& immatureBalance,
                                  const CAmount& watchBalance, const CAmount& watchUnconfirmedBalance, const CAmount& watchImmatureBalance)
 {
@@ -627,6 +660,11 @@ void SendCoinsDialog::useAvailableBalance(SendCoinsEntry* entry)
 void SendCoinsDialog::setMinimumFee()
 {
     ui->customFee->setValue(GetRequiredFee(1000));
+}
+
+void SendCoinsDialog::updateReplaceTransactionControls()
+{
+    ui->frameReplaceTransaction->setVisible(fReplaceTransaction);
 }
 
 void SendCoinsDialog::updateFeeSectionControls()
