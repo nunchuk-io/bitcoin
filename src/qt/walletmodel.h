@@ -64,6 +64,8 @@ public:
     static const int CURRENT_VERSION = 1;
     int nVersion;
 
+    bool validate();
+
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>

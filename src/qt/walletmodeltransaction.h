@@ -19,10 +19,12 @@ class CWalletTx;
 class WalletModelTransaction
 {
 public:
-    explicit WalletModelTransaction(const QList<SendCoinsRecipient> &recipients);
+    explicit WalletModelTransaction();
     ~WalletModelTransaction();
 
     QList<SendCoinsRecipient> getRecipients() const;
+    void addRecipient(SendCoinsRecipient recipient);
+    void resetRecipients();
 
     CWalletTx *getTransaction() const;
     unsigned int getTransactionSize();

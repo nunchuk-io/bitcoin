@@ -127,45 +127,6 @@ void SendCoinsEntry::useAvailableBalanceClicked()
     Q_EMIT useAvailableBalance(this);
 }
 
-bool SendCoinsEntry::validate()
-{
-    if (!model)
-        return false;
-
-    // Check input validity
-    bool retval = true;
-
-    // Skip checks for payment request
-    if (recipient.paymentRequest.IsInitialized())
-        return retval;
-
-    if (!model->validateAddress(ui->payTo->text()))
-    {
-        ui->payTo->setValid(false);
-        retval = false;
-    }
-
-    if (!ui->payAmount->validate())
-    {
-        retval = false;
-    }
-
-    // Sending a zero amount is invalid
-    if (ui->payAmount->value(0) <= 0)
-    {
-        ui->payAmount->setValid(false);
-        retval = false;
-    }
-
-    // Reject dust outputs:
-    if (retval && GUIUtil::isDust(ui->payTo->text(), ui->payAmount->value())) {
-        ui->payAmount->setValid(false);
-        retval = false;
-    }
-
-    return retval;
-}
-
 SendCoinsRecipient SendCoinsEntry::getValue()
 {
     // Payment request

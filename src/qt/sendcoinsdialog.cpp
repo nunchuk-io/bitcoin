@@ -52,6 +52,7 @@ SendCoinsDialog::SendCoinsDialog(const PlatformStyle *_platformStyle, QWidget *p
     ui(new Ui::SendCoinsDialog),
     clientModel(0),
     model(0),
+    transaction(),
     fNewRecipientAllowed(true),
     fFeeMinimized(true),
     platformStyle(_platformStyle)
@@ -216,27 +217,33 @@ void SendCoinsDialog::on_sendButton_clicked()
     if(!model || !model->getOptionsModel())
         return;
 
-    QList<SendCoinsRecipient> recipients;
-    bool valid = true;
+    // TODO: recipients should be updated as the user interacts with the UI,
+    //       rather than copied over from UI elements.
+    transaction.resetRecipients();
 
-    for(int i = 0; i < ui->entries->count(); ++i)
-    {
+    for(int i = 0; i < ui->entries->count(); ++i) {
         SendCoinsEntry *entry = qobject_cast<SendCoinsEntry*>(ui->entries->itemAt(i)->widget());
         if(entry)
         {
-            if(entry->validate())
-            {
-                recipients.append(entry->getValue());
-            }
-            else
-            {
-                valid = false;
-            }
+            transaction.addRecipient(entry->getValue());
         }
     }
 
-    if(!valid || recipients.isEmpty())
-    {
+    bool valid = true;
+
+    QList<SendCoinsRecipient> recipients = transaction.getRecipients();
+    
+    for(auto recipient = recipients.begin(); recipient != recipients.end(); ++recipient) {
+        if(!recipient->validate()) {
+            valid = false;
+        }
+    }
+
+    if(!valid) {
+        return;
+    }
+
+    if(transaction.getRecipients().isEmpty()) {
         return;
     }
 
@@ -250,7 +257,6 @@ void SendCoinsDialog::on_sendButton_clicked()
     }
 
     // prepare transaction for getting txFee earlier
-    WalletModelTransaction currentTransaction(recipients);
     WalletModel::SendCoinsReturn prepareStatus;
 
     // Always use a CCoinControl instance, use the CoinControlDialog instance if CoinControl has been enabled
@@ -260,22 +266,22 @@ void SendCoinsDialog::on_sendButton_clicked()
 
     updateCoinControlState(ctrl);
 
-    prepareStatus = model->prepareTransaction(currentTransaction, ctrl);
+    prepareStatus = model->prepareTransaction(transaction, ctrl);
 
     // process prepareStatus and on error generate message shown to user
     processSendCoinsReturn(prepareStatus,
-        BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), currentTransaction.getTransactionFee()));
+        BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), transaction.getTransactionFee()));
 
     if(prepareStatus.status != WalletModel::OK) {
         fNewRecipientAllowed = true;
         return;
     }
 
-    CAmount txFee = currentTransaction.getTransactionFee();
+    CAmount txFee = transaction.getTransactionFee();
 
     // Format confirmation message
     QStringList formatted;
-    for (const SendCoinsRecipient &rcp : currentTransaction.getRecipients())
+    for (const SendCoinsRecipient &rcp : transaction.getRecipients())
     {
         // generate bold amount string
         QString amount = "<b>" + BitcoinUnits::formatHtmlWithUnit(model->getOptionsModel()->getDisplayUnit(), rcp.amount);
@@ -322,12 +328,12 @@ void SendCoinsDialog::on_sendButton_clicked()
         questionString.append(tr("added as transaction fee"));
 
         // append transaction size
-        questionString.append(" (" + QString::number((double)currentTransaction.getTransactionSize() / 1000) + " kB)");
+        questionString.append(" (" + QString::number((double)transaction.getTransactionSize() / 1000) + " kB)");
     }
 
     // add total amount in all subdivision units
     questionString.append("<hr />");
-    CAmount totalAmount = currentTransaction.getTotalTransactionAmount() + txFee;
+    CAmount totalAmount = transaction.getTotalTransactionAmount() + txFee;
     QStringList alternativeUnits;
     for (BitcoinUnits::Unit u : BitcoinUnits::availableUnits())
     {
@@ -360,7 +366,7 @@ void SendCoinsDialog::on_sendButton_clicked()
     }
 
     // now send the prepared transaction
-    WalletModel::SendCoinsReturn sendStatus = model->sendCoins(currentTransaction);
+    WalletModel::SendCoinsReturn sendStatus = model->sendCoins(transaction);
     // process sendStatus and on error generate message shown to user
     processSendCoinsReturn(sendStatus);
 
@@ -400,10 +406,11 @@ SendCoinsEntry *SendCoinsDialog::addEntry()
     SendCoinsEntry *entry = new SendCoinsEntry(platformStyle, this);
     entry->setModel(model);
     ui->entries->addWidget(entry);
+
     connect(entry, SIGNAL(removeEntry(SendCoinsEntry*)), this, SLOT(removeEntry(SendCoinsEntry*)));
     connect(entry, SIGNAL(useAvailableBalance(SendCoinsEntry*)), this, SLOT(useAvailableBalance(SendCoinsEntry*)));
-    connect(entry, SIGNAL(payAmountChanged()), this, SLOT(coinControlUpdateLabels()));
-    connect(entry, SIGNAL(subtractFeeFromAmountChanged()), this, SLOT(coinControlUpdateLabels()));
+    connect(entry, SIGNAL(payAmountChanged()), this, SLOT(updatePayAmount(SendCoinsEntry*)));
+    connect(entry, SIGNAL(subtractFeeFromAmountChanged()), this, SLOT(changeSubtractFeeFromAmount(SendCoinsEntry*)));
 
     // Focus the field, so that entry can start immediately
     entry->clear();
@@ -426,6 +433,8 @@ void SendCoinsDialog::updateTabsAndLabels()
 
 void SendCoinsDialog::removeEntry(SendCoinsEntry* entry)
 {
+    // TODO: remove corresponding transaction.destinations entry
+
     entry->hide();
 
     // If the last entry is about to be removed add an empty one
@@ -601,6 +610,9 @@ void SendCoinsDialog::on_buttonMinimizeFee_clicked()
 
 void SendCoinsDialog::useAvailableBalance(SendCoinsEntry* entry)
 {
+    // TODO: update corresponding transaction.destinations entry
+    // TODO: move some of this stuff into SendCoinsRecipient
+
     // Get CCoinControl instance if CoinControl is enabled or create a new one.
     CCoinControl coin_control;
     if (model->getOptionsModel()->getCoinControlFeatures()) {
@@ -622,6 +634,20 @@ void SendCoinsDialog::useAvailableBalance(SendCoinsEntry* entry)
     } else {
       entry->setAmount(0);
     }
+}
+
+void SendCoinsDialog::updatePayAmount(SendCoinsEntry* entry)
+{
+    // TODO: update corresponding transaction.destinations entry
+
+    coinControlUpdateLabels();
+}
+
+void SendCoinsDialog::changeSubtractFeeFromAmount(SendCoinsEntry* entry)
+{
+    // TODO: update corresponding transaction.destinations entry
+
+    coinControlUpdateLabels();
 }
 
 void SendCoinsDialog::setMinimumFee()
