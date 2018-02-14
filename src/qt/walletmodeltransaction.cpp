@@ -7,8 +7,7 @@
 #include <policy/policy.h>
 #include <wallet/wallet.h>
 
-WalletModelTransaction::WalletModelTransaction(const QList<SendCoinsRecipient> &_recipients) :
-    recipients(_recipients),
+WalletModelTransaction::WalletModelTransaction() :
     walletTransaction(0),
     fee(0)
 {
@@ -23,6 +22,15 @@ WalletModelTransaction::~WalletModelTransaction()
 QList<SendCoinsRecipient> WalletModelTransaction::getRecipients() const
 {
     return recipients;
+}
+
+void WalletModelTransaction::addRecipient(SendCoinsRecipient recipient)
+{
+    recipients.append(recipient);
+}
+
+void WalletModelTransaction::resetRecipients() {
+    recipients.clear();
 }
 
 CWalletTx *WalletModelTransaction::getTransaction() const

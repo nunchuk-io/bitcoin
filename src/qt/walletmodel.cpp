@@ -36,6 +36,42 @@
 #include <QSet>
 #include <QTimer>
 
+bool SendCoinsRecipient::validate()
+{
+    // Check input validity
+    bool retval = true;
+
+    // Skip checks for payment request
+    if (paymentRequest.IsInitialized())
+        return retval;
+
+    // TODO clean up
+    // if (!model->validateAddress(ui->payTo->text()))
+    // {
+    //     ui->payTo->setValid(false);
+    //     retval = false;
+    // }
+    // if (!ui->payAmount->validate())
+    // {
+    //     retval = false;
+    // }
+    // 
+    // // Sending a zero amount is invalid
+    // if (ui->payAmount->value(0) <= 0)
+    // {
+    //     ui->payAmount->setValid(false);
+    //     retval = false;
+    // }
+    // 
+    // // Reject dust outputs:
+    // if (retval && GUIUtil::isDust(ui->payTo->text(), ui->payAmount->value())) {
+    //     ui->payAmount->setValid(false);
+    //     retval = false;
+    // }
+
+    return retval;
+}
+
 
 WalletModel::WalletModel(const PlatformStyle *platformStyle, CWallet *_wallet, OptionsModel *_optionsModel, QObject *parent) :
     QObject(parent), wallet(_wallet), optionsModel(_optionsModel), addressTableModel(0),
