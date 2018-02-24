@@ -12,11 +12,8 @@
 
 #include <stdint.h>
 
-/* Seed OpenSSL PRNG with additional entropy data */
-void RandAddSeed();
-
 /**
- * Functions to gather random data via the OpenSSL PRNG
+ * Functions to gather secure random data.
  */
 void GetRandBytes(unsigned char* buf, int num);
 uint64_t GetRand(uint64_t nMax);
@@ -29,12 +26,6 @@ uint256 GetRandHash();
  * no other work to be done.
  */
 void RandAddSeedSleep();
-
-/**
- * Function to gather random data from multiple sources, failing whenever any
- * of those source fail to provide a result.
- */
-void GetStrongRandBytes(unsigned char* buf, int num);
 
 /**
  * Fast randomness source. This is seeded once with secure random data, but
@@ -113,6 +104,9 @@ public:
     /** Generate random bytes. */
     std::vector<unsigned char> randbytes(size_t len);
 
+    /** Generate random bytes. */
+    void randbytes(unsigned char* out, size_t len) { rng.Output(out, len); }
+
     /** Generate a random 32-bit integer. */
     uint32_t rand32() { return randbits(32); }
 
@@ -131,7 +125,7 @@ public:
 static const int NUM_OS_RANDOM_BYTES = 32;
 
 /** Get 32 bytes of system entropy. Do not use this in application code: use
- * GetStrongRandBytes instead.
+ * GetRandBytes instead.
  */
 void GetOSRand(unsigned char *ent32);
 
