@@ -601,9 +601,22 @@ void TransactionView::focusTransaction(const uint256& txid)
         TransactionTableModel::TxHashRole,
         QString::fromStdString(txid.ToString()));
 
+    fprintf(stderr, "isEmpty?");
+
     if (results.isEmpty()) return;
 
-    focusTransaction(results[0]);
+    fprintf(stderr, "Go loop");
+
+    for (QModelIndexList::const_iterator it = results.begin(); it != results.end(); ++it) {
+        const QModelIndex idx = *it; 
+        QModelIndex targetIdx = transactionProxyModel->mapFromSource(idx);
+        fprintf(stderr, "row: %d", targetIdx.row());
+
+        transactionView->selectRow(targetIdx.row());
+        transactionView->selectRow(targetIdx.row() + 1);
+    }
+
+    // focusTransaction(results[0]);
 }
 
 // We override the virtual resizeEvent of the QWidget to adjust tables column
