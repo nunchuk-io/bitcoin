@@ -840,23 +840,7 @@ UniValue SignTransaction(CMutableTransaction& mtx, const UniValue& prevTxsUnival
         }
     }
 
-    int nHashType = SIGHASH_ALL;
-    if (!hashType.isNull()) {
-        static std::map<std::string, int> mapSigHashValues = {
-            {std::string("ALL"), int(SIGHASH_ALL)},
-            {std::string("ALL|ANYONECANPAY"), int(SIGHASH_ALL|SIGHASH_ANYONECANPAY)},
-            {std::string("NONE"), int(SIGHASH_NONE)},
-            {std::string("NONE|ANYONECANPAY"), int(SIGHASH_NONE|SIGHASH_ANYONECANPAY)},
-            {std::string("SINGLE"), int(SIGHASH_SINGLE)},
-            {std::string("SINGLE|ANYONECANPAY"), int(SIGHASH_SINGLE|SIGHASH_ANYONECANPAY)},
-        };
-        std::string strHashType = hashType.get_str();
-        if (mapSigHashValues.count(strHashType)) {
-            nHashType = mapSigHashValues[strHashType];
-        } else {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid sighash param");
-        }
-    }
+    int nHashType = ParseSighashString(hashType);
 
     bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
 
@@ -1755,8 +1739,9 @@ UniValue converttopsbt(const JSONRPCRequest& request)
                             "2. permitsigdata           (boolean, optional, default=false) If true, any signatures in the input will be discarde and conversion.\n"
                             "                              will continue. If false, RPC will fail if any signatures are present.\n"
                             "3. iswitness               (boolean, optional) Whether the transaction hex is a serialized witness transaction.\n"
-                            "                              If iswitness is not present, heuristic tests will be used in decoding. Only has an effect if\n"
-                            "                              permitsigdata is true\n"
+                            "                              If iswitness is not present, heuristic tests will be used in decoding. If true, only witness deserializaion\n"
+                            "                              will be tried. If false, only non-witness deserialization wil be tried. Only has an effect if\n"
+                            "                              permitsigdata is true.\n"
                             "\nResult:\n"
                             "  \"psbt\"        (string)  The resulting raw transaction (base64-encoded string)\n"
                             "\nExamples:\n"
