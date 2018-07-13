@@ -85,6 +85,51 @@ class PSBTTest(BitcoinTestFramework):
         walletprocesspsbt_out = self.nodes[2].walletprocesspsbt(psbtx)
         assert_equal(walletprocesspsbt_out['complete'], True)
         self.nodes[2].sendrawtransaction(self.nodes[2].finalizepsbt(walletprocesspsbt_out['psbt'])['hex'])
+        
+        # generate bech32 multisig address on node0 using a pubkey from from node1 and node2
+        pubkey1 = self.nodes[1].getaddressinfo(self.nodes[1].getnewaddress())['pubkey']
+        pubkey2 = self.nodes[2].getaddressinfo(self.nodes[2].getnewaddress())['pubkey']
+        p2wsh = self.nodes[0].addmultisigaddress(2, [pubkey1, pubkey2], "", "bech32")['address']
+        
+        # fund the 2-2 multisig:
+        rawtx = self.nodes[0].createrawtransaction([], {p2wsh:1})
+        rawtx = self.nodes[0].fundrawtransaction(rawtx, {"changePosition":1})
+        signed_tx = self.nodes[0].signrawtransactionwithwallet(rawtx['hex'])['hex']
+        txid = self.nodes[0].sendrawtransaction(signed_tx)
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        # node0 doesn't consider this its own address:
+        assert_raises_rpc_error(-4, "Address not found in wallet", self.nodes[0].getreceivedbyaddress, p2wsh)
+        self.nodes[0].importaddress(p2wsh)
+        assert_equal(self.nodes[0].getreceivedbyaddress(p2wsh), 1)
+
+        # node1 can't create a psbt, because it doesn't know the redeem script:
+        destination = self.nodes[1].getnewaddress()
+        assert_raises_rpc_error(-4, "Insufficient funds", self.nodes[1].walletcreatefundedpsbt, [{"txid":txid,"vout":0}], {destination:0.99})
+        self.nodes[1].addmultisigaddress(2, [pubkey1, pubkey2], "", "bech32")['address']
+
+        # tell node1 about the multisig, rescan and try again:
+        self.nodes[1].addmultisigaddress(2, [pubkey1, pubkey2], "", "bech32")['address']
+        self.nodes[1].rescanblockchain()
+
+        # Just knowing about the multisig is not enough: 
+        assert_raises_rpc_error(-4, "Insufficient funds", self.nodes[1].walletcreatefundedpsbt, [{"txid":txid,"vout":0}], {destination:0.99})
+        
+        # Import the address and try again:
+        self.nodes[1].importaddress(p2wsh)
+        assert_equal(self.nodes[1].getreceivedbyaddress(p2wsh), 1)
+        psbt = self.nodes[1].walletcreatefundedpsbt([{"txid":txid,"vout":0}], {destination:0.99})['psbt']
+        # No signature yet:
+        assert_equal(self.nodes[1].decodepsbt(psbt)['inputs'][0].get('partial_signatures'), None)
+
+        # Sign:
+        psbt = self.nodes[1].walletprocesspsbt(psbt)['psbt']
+        assert(self.nodes[1].decodepsbt(psbt)['inputs'][0]['partial_signatures'][pubkey1])
+        
+        # node2 can sign without addmultisig and importaddress:
+        res = self.nodes[2].walletprocesspsbt(psbt)
+        assert(res['complete'])
 
         # check that walletprocesspsbt fails to decode a non-psbt
         rawtx = self.nodes[1].createrawtransaction([{"txid":txid,"vout":p2wpkh_pos}], {self.nodes[1].getnewaddress():9.99})
