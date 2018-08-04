@@ -136,7 +136,7 @@ enum BlockStatus: uint32_t {
     /**
      * Only first tx is coinbase, 2 <= coinbase input script length <= 100, transactions valid, no duplicate txids,
      * sigops, size, merkle root. Implies all parents are at least TREE but not necessarily TRANSACTIONS. When all
-     * parent blocks also have TRANSACTIONS, CBlockIndex::nChainTx will be set.
+     * parent blocks also have TRANSACTIONS, CBlockIndex::m_chain_num_tx will be set.
      */
     BLOCK_VALID_TRANSACTIONS =    3,
 
@@ -200,8 +200,7 @@ public:
 
     //! (memory only) Number of transactions in the chain up to and including this block.
     //! This value will be non-zero only if and only if transactions for this block and all its parents are available.
-    //! Change to 64-bit type before 2024-2030, depending on SegWit adoption.
-    unsigned int nChainTx;
+    uint64_t m_chain_num_tx;
 
     //! Verification status of this block. See enum BlockStatus
     uint32_t nStatus;
@@ -230,7 +229,7 @@ public:
         nUndoPos = 0;
         nChainWork = arith_uint256();
         nTx = 0;
-        nChainTx = 0;
+        m_chain_num_tx = 0;
         nStatus = 0;
         nSequenceId = 0;
         nTimeMax = 0;

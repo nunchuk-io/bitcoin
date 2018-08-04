@@ -1377,7 +1377,7 @@ static UniValue getchaintips(const JSONRPCRequest& request)
         } else if (block->nStatus & BLOCK_FAILED_MASK) {
             // This block or one of its ancestors is invalid.
             status = "invalid";
-        } else if (block->nChainTx == 0) {
+        } else if (block->m_chain_num_tx == 0) {
             // This block cannot be connected because full block data for it or one of its parents is missing.
             status = "headers-only";
         } else if (block->IsValid(BLOCK_VALID_SCRIPTS)) {
@@ -1606,11 +1606,11 @@ static UniValue getchaintxstats(const JSONRPCRequest& request)
 
     const CBlockIndex* pindexPast = pindex->GetAncestor(pindex->nHeight - blockcount);
     int nTimeDiff = pindex->GetMedianTimePast() - pindexPast->GetMedianTimePast();
-    int nTxDiff = pindex->nChainTx - pindexPast->nChainTx;
+    int64_t nTxDiff = pindex->m_chain_num_tx - pindexPast->m_chain_num_tx;
 
     UniValue ret(UniValue::VOBJ);
     ret.pushKV("time", (int64_t)pindex->nTime);
-    ret.pushKV("txcount", (int64_t)pindex->nChainTx);
+    ret.pushKV("txcount", pindex->m_chain_num_tx);
     ret.pushKV("window_final_block_hash", pindex->GetBlockHash().GetHex());
     ret.pushKV("window_block_count", blockcount);
     if (blockcount > 0) {
