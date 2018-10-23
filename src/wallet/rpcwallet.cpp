@@ -2833,7 +2833,7 @@ static UniValue listunspent(const JSONRPCRequest& request)
         CTxDestination address;
         const CScript& scriptPubKey = out.tx->tx->vout[out.i].scriptPubKey;
         bool fValidAddress = ExtractDestination(scriptPubKey, address);
-        auto descriptor = InferDescriptor(scriptPubKey, *pwallet);
+        auto descriptor = InferDescriptor(scriptPubKey, *pwallet, false);
 
         if (destinations.size() && (!fValidAddress || !destinations.count(address)))
             continue;
@@ -3634,7 +3634,7 @@ UniValue getaddressinfo(const JSONRPCRequest& request)
     bool solvable = IsSolvable(*pwallet, scriptPubKey);
     ret.pushKV("solvable", solvable);
     if (solvable) {
-       ret.pushKV("descriptor", InferDescriptor(scriptPubKey, *pwallet)->ToString());
+       ret.pushKV("descriptor", InferDescriptor(scriptPubKey, *pwallet, false)->ToString());
     }
     ret.pushKV("iswatchonly", bool(mine & ISMINE_WATCH_ONLY));
     UniValue detail = DescribeWalletAddress(pwallet, dest);
@@ -4113,7 +4113,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "backupwallet",                     &backupwallet,                  {"destination"} },
     { "wallet",             "bumpfee",                          &bumpfee,                       {"txid", "options"} },
     { "wallet",             "createwallet",                     &createwallet,                  {"wallet_name", "disable_private_keys"} },
-    { "wallet",             "dumpprivkey",                      &dumpprivkey,                   {"address"}  },
+    { "wallet",             "dumpprivkey",                      &dumpprivkey,                   {"address", "use_descriptor"}  },
     { "wallet",             "dumpwallet",                       &dumpwallet,                    {"filename"} },
     { "wallet",             "encryptwallet",                    &encryptwallet,                 {"passphrase"} },
     { "wallet",             "getaddressesbylabel",              &getaddressesbylabel,           {"label"} },

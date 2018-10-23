@@ -68,7 +68,9 @@ std::unique_ptr<Descriptor> Parse(const std::string& descriptor, FlatSigningProv
  * - Failing that, if `script` corresponds to a known address type, an "addr()" descriptor will be
  *   returned (which is not `IsSolvable()`).
  * - Failing that, a "raw()" descriptor is returned.
+ *
+ * If secrets is true, private keys are added to the descriptor where possible.
  */
-std::unique_ptr<Descriptor> InferDescriptor(const CScript& script, const SigningProvider& provider);
+std::unique_ptr<Descriptor> InferDescriptor(const CScript& script, const SigningProvider& provider, bool secrets);
 
 #endif // BITCOIN_SCRIPT_DESCRIPTOR_H

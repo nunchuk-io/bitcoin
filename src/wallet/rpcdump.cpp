@@ -6,6 +6,7 @@
 #include <key_io.h>
 #include <rpc/server.h>
 #include <validation.h>
+#include <script/descriptor.h>
 #include <script/script.h>
 #include <script/standard.h>
 #include <sync.h>
@@ -645,12 +646,15 @@ UniValue dumpprivkey(const JSONRPCRequest& request)
             "Then the importprivkey can be used with this output\n"
             "\nArguments:\n"
             "1. \"address\"   (string, required) The bitcoin address for the private key\n"
+            "2. \"use_descriptor\"   (boolean, optional) Output result as a descriptor\n"
             "\nResult:\n"
-            "\"key\"                (string) The private key\n"
+            "\"key\"                (string) The private key or descriptor\n"
             "\nExamples:\n"
             + HelpExampleCli("dumpprivkey", "\"myaddress\"")
             + HelpExampleCli("importprivkey", "\"mykey\"")
+            + HelpExampleCli("dumpprivkey", "\"myaddress\" true")
             + HelpExampleRpc("dumpprivkey", "\"myaddress\"")
+            + HelpExampleRpc("dumpprivkey", "\"myaddress\" true")
         );
 
     LOCK2(cs_main, pwallet->cs_wallet);
@@ -666,11 +670,25 @@ UniValue dumpprivkey(const JSONRPCRequest& request)
     if (keyid.IsNull()) {
         throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to a key");
     }
+
     CKey vchSecret;
     if (!pwallet->GetKey(keyid, vchSecret)) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address " + strAddress + " is not known");
     }
-    return EncodeSecret(vchSecret);
+
+    // if !use_descriptor {
+
+      // return EncodeSecret(vchSecret);
+
+    // else {
+
+    // Make sure the destination is valid
+      CScript scriptPubKey = GetScriptForDestination(dest);
+      auto descriptor = InferDescriptor(scriptPubKey, *pwallet, true);
+      // }
+
+
+    return  descriptor->ToString();
 }
 
 

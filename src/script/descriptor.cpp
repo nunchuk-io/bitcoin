@@ -642,7 +642,7 @@ std::unique_ptr<PubkeyProvider> InferPubkey(const CPubKey& pubkey, ParseScriptCo
     return key_provider;
 }
 
-std::unique_ptr<Descriptor> InferScript(const CScript& script, ParseScriptContext ctx, const SigningProvider& provider)
+std::unique_ptr<Descriptor> InferScript(const CScript& script, ParseScriptContext ctx, const SigningProvider& provider, bool secrets)
 {
     std::vector<std::vector<unsigned char>> data;
     txnouttype txntype = Solver(script, data);
@@ -657,8 +657,13 @@ std::unique_ptr<Descriptor> InferScript(const CScript& script, ParseScriptContex
         uint160 hash(data[0]);
         CKeyID keyid(hash);
         CPubKey pubkey;
+        CPrivKey privkey;
         if (provider.GetPubKey(keyid, pubkey)) {
+          if (secrets && provider.GetPrivKey(keyid, privkey)) {
             return MakeUnique<SingleKeyDescriptor>(InferPubkey(pubkey, ctx, provider), P2PKHGetScript, "pkh");
+          } else {
+            return MakeUnique<SingleKeyDescriptor>(InferPubkey(privkey, ctx, provider), P2PKHGetScript, "pkh");
+          }
         }
     }
     if (txntype == TX_WITNESS_V0_KEYHASH && ctx != ParseScriptContext::P2WSH) {
@@ -716,7 +721,7 @@ std::unique_ptr<Descriptor> Parse(const std::string& descriptor, FlatSigningProv
     return nullptr;
 }
 
-std::unique_ptr<Descriptor> InferDescriptor(const CScript& script, const SigningProvider& provider)
+std::unique_ptr<Descriptor> InferDescriptor(const CScript& script, const SigningProvider& provider, bool secrets)
 {
-    return InferScript(script, ParseScriptContext::TOP, provider);
+    return InferScript(script, ParseScriptContext::TOP, provider, secrets);
 }
