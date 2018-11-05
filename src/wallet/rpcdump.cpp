@@ -1084,6 +1084,7 @@ static UniValue ProcessImport(CWallet * const pwallet, const UniValue& data, con
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Internal addresses should not have a label");
         }
         const std::string& label = data.exists("label") ? data["label"].get_str() : "";
+        const bool add_keypool = data.exists("keypool") ? data["keypool"].get_bool() : false;
 
         UniValue warnings(UniValue::VARR);
         ImportData import_data;
@@ -1096,6 +1097,16 @@ static UniValue ProcessImport(CWallet * const pwallet, const UniValue& data, con
         } else {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Either a descriptor or scriptPubKey must be provided.");
         }
+
+        // Add to keypool only works with privkeys disabled
+         if (add_keypool && !pwallet->IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS)) {
+             throw JSONRPCError(RPC_INVALID_PARAMETER, "Keys can only be imported to the keypool when private keys are disabled");
+         }
+
+         // Add to keypool only works with pubkeys
+         if (add_keypool && import_data.pubkeys.size() == 0) {
+             throw JSONRPCError(RPC_INVALID_PARAMETER, "Only pubkeys can be imported to the keypool");
+         }
 
         for (const CScript& script : import_data.script_pub_keys) {
             // Check whether we have any work to do
@@ -1131,6 +1142,11 @@ static UniValue ProcessImport(CWallet * const pwallet, const UniValue& data, con
                 if (!pwallet->GetPubKey(id, temp) && !pwallet->AddWatchOnly(GetScriptForRawPubKey(pubkey), timestamp)) {
                     throw JSONRPCError(RPC_WALLET_ERROR, "Error adding address to wallet");
                 }
+
+                // Add pubkey to keypool
+                 if (add_keypool) {
+                     pwallet->AddKeypoolPubkey(pubkey, internal);
+                 }
             }
         }
 
@@ -1211,6 +1227,7 @@ UniValue importmulti(const JSONRPCRequest& mainRequest)
             "      \"internal\": <true>                                    , (boolean, optional, default: false) Stating whether matching outputs should be treated as not incoming payments\n"
             "      \"watchonly\": <true>                                   , (boolean, optional, default: false) Stating whether matching outputs should be considered watched even when they're not spendable, only allowed if keys are empty\n"
             "      \"label\": <label>                                      , (string, optional, default: '') Label to assign to the address, only allowed with internal=false\n"
+            "      \"keypool\": <true|false>                               , (boolean, optional, default: false) If true, adds the pubkeys to the keypool if private keys are disabled for the wallet.\n"
             "    }\n"
             "  ,...\n"
             "  ]\n"
