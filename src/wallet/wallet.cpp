@@ -4361,7 +4361,10 @@ bool CWallet::GetKeyOrigin(const CKeyID& keyID, KeyOriginInfo& info) const
             meta = it->second;
         }
     }
-    if (!meta.hdKeypath.empty()) {
+    if (!meta.hdKeypath.empty() && !meta.master_key_id.IsNull()) {
+         if (!ParseHDKeypath(meta.hdKeypath, info.path)) return false;
+         std::copy(meta.master_key_id.begin(), meta.master_key_id.begin() + 4, info.fingerprint);
+    } else if (!meta.hdKeypath.empty() && !meta.hd_seed_id.IsNull()) {
         if (!ParseHDKeypath(meta.hdKeypath, info.path)) return false;
         // Get the proper master key id
         CKey key;
