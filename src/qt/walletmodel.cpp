@@ -575,7 +575,7 @@ bool WalletModel::isWalletEnabled()
 
 bool WalletModel::privateKeysDisabled() const
 {
-    return m_wallet->IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS);
+    return m_wallet->NoPrivkeysAndKeypoolEmpty(false);
 }
 
 bool WalletModel::canGetAddresses() const
@@ -584,8 +584,8 @@ bool WalletModel::canGetAddresses() const
     // * hdEnabled(): an HD seed is present; or
     // * it is a legacy wallet, because:
     //     * !hdEnabled(): an HD seed is not present; and
-    //     * !IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS): private keys have not been disabled (which results in hdEnabled() == true)
-    return m_wallet->hdEnabled() || (!m_wallet->hdEnabled() && !m_wallet->IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS));
+    //     * !NoPrivkeysAndKeypoolEmpty(false): private keys have not been disabled (which results in hdEnabled() == true) and no keys imported to the keypool
+    return m_wallet->hdEnabled() || (!m_wallet->hdEnabled() && !m_wallet->NoPrivkeysAndKeypoolEmpty(false));
 }
 
 QString WalletModel::getWalletName() const
