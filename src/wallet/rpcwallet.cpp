@@ -170,16 +170,11 @@ static UniValue getnewaddress(const JSONRPCRequest& request)
                 },
             }.ToString());
 
-    if (pwallet->IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS)) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Error: Private keys are disabled for this wallet");
-    }
-
     LOCK(pwallet->cs_wallet);
 
     if (!pwallet->CanGetAddresses()) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: This wallet has no available keys");
     }
-
 
     // Parse the label first so we don't generate a key if there's an error
     std::string label;
@@ -235,10 +230,6 @@ static UniValue getrawchangeaddress(const JSONRPCRequest& request)
             + HelpExampleRpc("getrawchangeaddress", "")
                 },
             }.ToString());
-
-    if (pwallet->IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS)) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Error: Private keys are disabled for this wallet");
-    }
 
     LOCK(pwallet->cs_wallet);
 
