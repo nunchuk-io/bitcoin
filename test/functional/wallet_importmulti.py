@@ -625,6 +625,74 @@ class ImportMultiTest(BitcoinTestFramework):
                      ismine=False,
                      iswatchonly=False)
 
+        # Import some public keys to the keypool of a no privkey wallet
+        self.log.info("Adding pubkey to keypool of disableprivkey wallet")
+        self.nodes[1].createwallet(wallet_name="noprivkeys", disable_private_keys=True)
+        wrpc = self.nodes[1].get_wallet_rpc("noprivkeys")
+
+        addr1 = self.nodes[0].getnewaddress()
+        addr2 = self.nodes[0].getnewaddress()
+        pub1 = self.nodes[0].getaddressinfo(addr1)['pubkey']
+        pub2 = self.nodes[0].getaddressinfo(addr2)['pubkey']
+        result = wrpc.importmulti(
+            [{
+                'desc': 'wpkh(' + pub1 + ')',
+                'keypool': True,
+                "timestamp": "now",
+            },
+            {
+                'desc': 'wpkh(' + pub2 + ')',
+                'keypool': True,
+                "timestamp": "now",
+            }]
+        )
+        assert result[0]['success']
+        assert result[1]['success']
+        newaddr1 = wrpc.getnewaddress()
+        assert_equal(addr1, newaddr1)
+        newaddr2 = wrpc.getnewaddress()
+        assert_equal(addr2, newaddr2)
+
+        # Import some public keys to the internal keypool of a no privkey wallet
+        self.log.info("Adding pubkey to internal keypool of disableprivkey wallet")
+        addr1 = self.nodes[0].getnewaddress()
+        addr2 = self.nodes[0].getnewaddress()
+        pub1 = self.nodes[0].getaddressinfo(addr1)['pubkey']
+        pub2 = self.nodes[0].getaddressinfo(addr2)['pubkey']
+        result = wrpc.importmulti(
+            [{
+                'desc': 'wpkh(' + pub1 + ')',
+                'keypool': True,
+                'internal': True,
+                "timestamp": "now",
+            },
+            {
+                'desc': 'wpkh(' + pub2 + ')',
+                'keypool': True,
+                'internal': True,
+                "timestamp": "now",
+            }]
+        )
+        assert result[0]['success']
+        assert result[1]['success']
+        newaddr1 = wrpc.getrawchangeaddress()
+        assert_equal(addr1, newaddr1)
+        newaddr2 = wrpc.getrawchangeaddress()
+        assert_equal(addr2, newaddr2)
+
+        # Cannot import those pubkeys to keypool of wallet with privkeys
+        self.log.info("Pubkeys cannot be added to the keypool of a wallet with private keys")
+        wrpc = self.nodes[1].get_wallet_rpc("")
+        assert wrpc.getwalletinfo()['private_keys_enabled']
+        result = wrpc.importmulti(
+            [{
+                'desc': 'wpkh(' + pub1 + ')',
+                'keypool': True,
+                "timestamp": "now",
+            }]
+        )
+        assert_equal(result[0]['error']['code'], -8)
+        assert_equal(result[0]['error']['message'], "Keys can only be imported to the keypool when private keys are disabled")
 
 if __name__ == '__main__':
     ImportMultiTest().main()
