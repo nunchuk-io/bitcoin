@@ -1205,6 +1205,12 @@ static UniValue ProcessImport(CWallet * const pwallet, const UniValue& data, con
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Internal addresses should not have a label");
         }
         const std::string& label = data.exists("label") ? data["label"].get_str() : "";
+        const bool add_keypool = data.exists("keypool") ? data["keypool"].get_bool() : false;
+
+        // Add to keypool only works with privkeys disabled
+        if (add_keypool && !pwallet->IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS)) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Keys can only be imported to the keypool when private keys are disabled");
+        }
 
         ImportData import_data;
         std::map<CKeyID, CPubKey> pubkey_map;
@@ -1259,6 +1265,11 @@ static UniValue ProcessImport(CWallet * const pwallet, const UniValue& data, con
             CPubKey temp;
             if (!pwallet->GetPubKey(id, temp) && !pwallet->AddWatchOnly(GetScriptForRawPubKey(pubkey), timestamp)) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "Error adding address to wallet");
+            }
+
+            // Add to keypool only works with pubkeys
+            if (add_keypool) {
+                pwallet->AddKeypoolPubkey(pubkey, internal);
             }
         }
 
