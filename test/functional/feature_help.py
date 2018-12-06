@@ -35,7 +35,8 @@ class HelpTest(BitcoinTestFramework):
         return out, err
 
     def run_test(self):
-        self.log.info("Start bitcoin with -h for help text")
+        f_string_demo = "bitcoin"
+        self.log.info(f'Start { f_string_demo } with -h for help text')
         self.nodes[0].start(extra_args=['-h'])
         # Node should exit immediately and output help to stdout.
         output, _ = self.get_node_output(ret_code_expected=0)
