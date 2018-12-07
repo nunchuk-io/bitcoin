@@ -211,6 +211,7 @@ BITCOIN_CORE_H = \
   wallet/externalsigner.h \
   wallet/feebumper.h \
   wallet/fees.h \
+  wallet/rpcdump.h \
   wallet/rpcsigner.h \
   wallet/psbtwallet.h \
   wallet/rpcwallet.h \
