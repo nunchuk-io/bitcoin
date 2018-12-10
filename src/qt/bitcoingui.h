@@ -131,6 +131,7 @@ private:
     QAction* openAction = nullptr;
     QAction* showHelpMessageAction = nullptr;
     QAction* m_new_wallet_action = nullptr;
+    QAction* m_pair_hardware_wallet_action = nullptr;
     QAction* m_open_wallet_action = nullptr;
     QAction* m_close_wallet_action = nullptr;
     QAction* m_wallet_selector_label_action = nullptr;
@@ -251,6 +252,8 @@ public Q_SLOTS:
     void openClicked();
     /** New wallet dialog */
     void newWallet();
+    /** Show open wallet dialog */
+    void pairHardwareWallet();
     /** Show open wallet dialog */
     void openWallet();
     /** Close current wallet */

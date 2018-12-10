@@ -335,6 +335,9 @@ void BitcoinGUI::createActions()
     m_new_wallet_action = new QAction(platformStyle->TextColorIcon(":/icons/open"), tr("New &Wallet"), this);
     m_new_wallet_action->setStatusTip(tr("Create a wallet"));
 
+    m_new_wallet_action = new QAction(platformStyle->TextColorIcon(":/icons/open"), tr("Pair &Hardware Wallet"), this);
+    m_new_wallet_action->setStatusTip(tr("Pair a hardware wallet"));
+
     m_open_wallet_action = new QAction(platformStyle->TextColorIcon(":/icons/open"), tr("Open &Wallet"), this);
     m_open_wallet_action->setStatusTip(tr("Open a wallet"));
 
@@ -367,6 +370,7 @@ void BitcoinGUI::createActions()
         connect(usedReceivingAddressesAction, &QAction::triggered, walletFrame, &WalletFrame::usedReceivingAddresses);
         connect(openAction, &QAction::triggered, this, &BitcoinGUI::openClicked);
         connect(m_new_wallet_action, &QAction::triggered, this, &BitcoinGUI::newWallet);
+        connect(m_pair_hardware_wallet_action, &QAction::triggered, this, &BitcoinGUI::pairHardwareWallet);
         connect(m_open_wallet_action, &QAction::triggered, this, &BitcoinGUI::openWallet);
         connect(m_close_wallet_action, &QAction::triggered, this, &BitcoinGUI::closeWallet);
     }
@@ -391,6 +395,7 @@ void BitcoinGUI::createMenuBar()
     if(walletFrame)
     {
         file->addAction(m_new_wallet_action);
+        file->addAction(m_pair_hardware_wallet_action);
         file->addAction(m_open_wallet_action);
         file->addAction(m_close_wallet_action);
         file->addSeparator();
@@ -726,6 +731,29 @@ void BitcoinGUI::newWallet()
         QMessageBox::information(this, tr("New Wallet"), QString::fromStdString(warning));
     }
 }
+
+void BitcoinGUI::pairHardwareWallet()
+{
+    // Check if signer is present, call enumerate and fetch keys from first available device:
+    // TODO
+
+    // All good, prompt user for file name:
+    QString file_name = QFileDialog::getSaveFileName(this, tr("New Wallet"), QString::fromStdString(m_node.getWalletDir()));
+    if (file_name.isEmpty()) return;
+
+    std::string error, warning;
+    if (!m_node.createWallet(QDir::toNativeSeparators(file_name).toStdString(), error, warning)) {
+        QMessageBox::information(this, tr("New Wallet"), QString::fromStdString(error));
+        return;
+    }
+    if (!warning.empty()) {
+        QMessageBox::information(this, tr("New Wallet"), QString::fromStdString(warning));
+    }
+
+    // Import keys into the newly created wallet
+    // TODO
+}
+
 
 void BitcoinGUI::openWallet()
 {
