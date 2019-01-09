@@ -1037,8 +1037,6 @@ static UniValue sendrawtransaction(const JSONRPCRequest& request)
                 },
             }.ToString());
 
-    std::promise<void> promise;
-
     RPCTypeCheck(request.params, {UniValue::VSTR, UniValue::VBOOL});
 
     // parse hex string from parameter
@@ -1046,10 +1044,17 @@ static UniValue sendrawtransaction(const JSONRPCRequest& request)
     if (!DecodeHexTx(mtx, request.params[0].get_str()))
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
     CTransactionRef tx(MakeTransactionRef(std::move(mtx)));
+
+    bool allowhighfees = !request.params[1].isNull() && request.params[1].get_bool();
+    return BroadcastTransaction(tx, allowhighfees);
+}
+
+std::string BroadcastTransaction(CTransactionRef tx, bool allowhighfees) {
+    std::promise<void> promise;
     const uint256& hashTx = tx->GetHash();
 
     CAmount nMaxRawTxFee = maxTxFee;
-    if (!request.params[1].isNull() && request.params[1].get_bool())
+    if (allowhighfees)
         nMaxRawTxFee = 0;
 
     { // cs_main scope
