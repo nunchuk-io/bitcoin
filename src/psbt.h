@@ -36,6 +36,14 @@ static constexpr uint8_t PSBT_OUT_BIP32_DERIVATION = 0x02;
 // as a 0 length key which indicates that this is the separator. The separator has no value.
 static constexpr uint8_t PSBT_SEPARATOR = 0x00;
 
+/** An exception in PSBT processing that represents a problem with the input data --
+    when the input data is user-supplied, it is appropriate to catch() this and use
+    e.what() to retrieve a human-readable error message. */
+class PSBTException: public std::runtime_error {
+    // expose superclass constructors
+    using std::runtime_error::runtime_error;
+};
+
 /** A structure for PSBTs which contain per-input information */
 struct PSBTInput
 {

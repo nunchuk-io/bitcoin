@@ -2,7 +2,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <rpc/protocol.h>
 #include <wallet/psbtwallet.h>
 
 bool FillPSBT(const CWallet* pwallet, PartiallySignedTransaction& psbtx, int sighash_type, bool sign, bool bip32derivs)
@@ -20,7 +19,7 @@ bool FillPSBT(const CWallet* pwallet, PartiallySignedTransaction& psbtx, int sig
 
         // Verify input looks sane. This will check that we have at most one uxto, witness or non-witness.
         if (!input.IsSane()) {
-            throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "PSBT input is not sane.");
+            throw PSBTException("PSBT input is not sane.");
         }
 
         // If we have no utxo, grab it from the wallet.
@@ -37,7 +36,7 @@ bool FillPSBT(const CWallet* pwallet, PartiallySignedTransaction& psbtx, int sig
 
         // Get the Sighash type
         if (sign && input.sighash_type > 0 && input.sighash_type != sighash_type) {
-            throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Specified Sighash and sighash in PSBT do not match.");
+            throw PSBTException("Specified Sighash and sighash in PSBT do not match.");
         }
 
         complete &= SignPSBTInput(HidingSigningProvider(pwallet, !sign, !bip32derivs), psbtx, i, sighash_type);
