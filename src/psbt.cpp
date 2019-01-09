@@ -232,3 +232,44 @@ bool SignPSBTInput(const SigningProvider& provider, PartiallySignedTransaction& 
 
     return sig_complete;
 }
+
+void FinalizePSBT(PartiallySignedTransaction& psbtx, bool extract, std::string& result, bool& complete) {
+    // Finalize input signatures -- in case we have partial signatures that add up to a complete
+    //   signature, but have not combined them yet (e.g. because the combiner that created this
+    //   PartiallySignedTransaction did not understand them), this will combine them into a final
+    //   script.
+    complete = true;
+    for (unsigned int i = 0; i < psbtx.tx->vin.size(); ++i) {
+        complete &= SignPSBTInput(DUMMY_SIGNING_PROVIDER, psbtx, i, SIGHASH_ALL);
+    }
+
+    CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
+    if (complete && extract) {
+        CMutableTransaction mtx(*psbtx.tx);
+        for (unsigned int i = 0; i < mtx.vin.size(); ++i) {
+            mtx.vin[i].scriptSig = psbtx.inputs[i].final_script_sig;
+            mtx.vin[i].scriptWitness = psbtx.inputs[i].final_script_witness;
+        }
+        ssTx << mtx;
+        result = HexStr(ssTx.str());
+    } else {
+        ssTx << psbtx;
+        result = EncodeBase64(ssTx.str());
+    }
+}
+
+PartiallySignedTransaction CombinePSBTs(std::vector<PartiallySignedTransaction> psbtxs) {
+    PartiallySignedTransaction merged_psbt(psbtxs[0]); // Copy the first one
+
+    // Merge
+    for (auto it = std::next(psbtxs.begin()); it != psbtxs.end(); ++it) {
+        if (!merged_psbt.Merge(*it)) {
+            throw PSBTException("PSBTs do not refer to the same transactions.");
+        }
+    }
+    if (!merged_psbt.IsSane()) {
+        throw PSBTException("Merged PSBT is inconsistent");
+    }
+
+    return merged_psbt;
+}

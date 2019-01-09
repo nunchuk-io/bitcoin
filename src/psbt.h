@@ -553,4 +553,10 @@ bool PSBTInputSigned(PSBTInput& input);
 /** Signs a PSBTInput, verifying that all provided data matches what is being signed. */
 bool SignPSBTInput(const SigningProvider& provider, PartiallySignedTransaction& psbt, int index, int sighash = SIGHASH_ALL);
 
+/** Finalizes a PSBT if possible, combining partial signatures and optionally extracting to a signed transaction ready for sending. */
+void FinalizePSBT(PartiallySignedTransaction& psbtx, bool extract, std::string& result, bool& complete);
+
+/** Combines PSBTs with the same underlying transaction, resulting in a single PSBT with all partial signatures from each input. */
+PartiallySignedTransaction CombinePSBTs(std::vector<PartiallySignedTransaction> psbtxs);
+
 #endif // BITCOIN_PSBT_H
