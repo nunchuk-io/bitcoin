@@ -391,20 +391,15 @@ struct PartiallySignedTransaction
     std::map<std::vector<unsigned char>, std::vector<unsigned char>> unknown;
 
     bool IsNull() const;
-    void Merge(const PartiallySignedTransaction& psbt);
+    NODISCARD bool Merge(const PartiallySignedTransaction& psbt);
     bool IsSane() const;
     PartiallySignedTransaction() {}
     PartiallySignedTransaction(const PartiallySignedTransaction& psbt_in) : tx(psbt_in.tx), inputs(psbt_in.inputs), outputs(psbt_in.outputs), unknown(psbt_in.unknown) {}
     explicit PartiallySignedTransaction(const CMutableTransaction& tx);
 
-    // Only checks if they refer to the same transaction
-    friend bool operator==(const PartiallySignedTransaction& a, const PartiallySignedTransaction &b)
-    {
-        return a.tx->GetHash() == b.tx->GetHash();
-    }
-    friend bool operator!=(const PartiallySignedTransaction& a, const PartiallySignedTransaction &b)
-    {
-        return !(a == b);
+    // Checks if they refer to the same underlying CTransaction
+    bool SameTx(const PartiallySignedTransaction& psbt) {
+        return tx->GetHash() == psbt.tx->GetHash();
     }
 
     template <typename Stream>
