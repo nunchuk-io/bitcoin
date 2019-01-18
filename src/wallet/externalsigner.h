@@ -9,6 +9,8 @@
 #include <string>
 #include <univalue.h>
 
+struct PartiallySignedTransaction;
+
 class ExternalSignerException : public std::runtime_error {
 public:
     using std::runtime_error::runtime_error;
@@ -34,6 +36,7 @@ public:
 
     UniValue displayAddress(const std::string& descriptor);
     UniValue getKeys(const std::string& descriptor);
+    bool signTransaction(PartiallySignedTransaction& psbt, std::string& error);
 };
 
 #endif // BITCOIN_WALLET_EXTERNALSIGNER_H
