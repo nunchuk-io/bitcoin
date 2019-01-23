@@ -1115,6 +1115,15 @@ std::string BroadcastTransaction(CTransactionRef tx, bool allowhighfees) {
     return hashTx.GetHex();
 }
 
+std::string BroadcastTransactionHex(const std::string tx_hex, const bool allowhighfees) {
+    CMutableTransaction mtx;
+    if (!DecodeHexTx(mtx, tx_hex)) {
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+    }
+    CTransactionRef tx(MakeTransactionRef(std::move(mtx)));
+    return BroadcastTransaction(tx);
+}
+
 static UniValue testmempoolaccept(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() < 1 || request.params.size() > 2) {

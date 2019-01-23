@@ -16,6 +16,9 @@ class Chain;
 /** Broadcast a transaction */
 std::string BroadcastTransaction(CTransactionRef tx, bool allowhighfees = false);
 
+/** Broadcast a transaction from hex string */
+std::string BroadcastTransactionHex(const std::string tx_hex, const bool allowhighfees = false);
+
 /** Sign a transaction with the given keystore and previous transactions */
 UniValue SignTransaction(interfaces::Chain& chain, CMutableTransaction& mtx, const UniValue& prevTxs, CBasicKeyStore *keystore, bool tempKeystore, const UniValue& hashType);
 
