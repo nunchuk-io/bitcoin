@@ -1208,12 +1208,7 @@ static UniValue ProcessImport(CWallet * const pwallet, const UniValue& data, con
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Internal addresses should not have a label");
         }
         const std::string& label = data.exists("label") ? data["label"].get_str() : "";
-        const bool add_keypool = data.exists("keypool") ? data["keypool"].get_bool() : false;
-
-        // Add to keypool only works with privkeys disabled
-        if (add_keypool && !pwallet->IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS)) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Keys can only be imported to the keypool when private keys are disabled");
-        }
+        bool add_keypool = data.exists("keypool") ? data["keypool"].get_bool() : false;
 
         ImportData import_data;
         std::map<CKeyID, CPubKey> pubkey_map;
@@ -1262,6 +1257,13 @@ static UniValue ProcessImport(CWallet * const pwallet, const UniValue& data, con
                  throw JSONRPCError(RPC_WALLET_ERROR, "Error adding key to wallet");
              }
              pwallet->UpdateTimeFirstKey(timestamp);
+
+             if (add_keypool) {
+                  pwallet->AddKeypoolPubkey(pubkey, internal);
+             }
+         }
+         if (!privkey_map.empty()) {
+             add_keypool = false; // Don't add twice
          }
         for (const CKeyID& id : ordered_pubkeys) {
             auto entry = pubkey_map.find(id);

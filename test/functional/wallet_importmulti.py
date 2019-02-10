@@ -648,6 +648,7 @@ class ImportMultiTest(BitcoinTestFramework):
         )
         assert result[0]['success']
         assert result[1]['success']
+        assert_equal(wrpc.getwalletinfo()["keypoolsize"],2)
         newaddr1 = wrpc.getnewaddress()
         assert_equal(addr1, newaddr1)
         newaddr2 = wrpc.getnewaddress()
@@ -658,6 +659,7 @@ class ImportMultiTest(BitcoinTestFramework):
         addr1 = self.nodes[0].getnewaddress()
         addr2 = self.nodes[0].getnewaddress()
         pub1 = self.nodes[0].getaddressinfo(addr1)['pubkey']
+        priv1 = self.nodes[0].dumpprivkey(addr1)
         pub2 = self.nodes[0].getaddressinfo(addr2)['pubkey']
         result = wrpc.importmulti(
             [{
@@ -680,19 +682,24 @@ class ImportMultiTest(BitcoinTestFramework):
         newaddr2 = wrpc.getrawchangeaddress()
         assert_equal(addr2, newaddr2)
 
-        # Cannot import those pubkeys to keypool of wallet with privkeys
-        self.log.info("Pubkeys cannot be added to the keypool of a wallet with private keys")
-        wrpc = self.nodes[1].get_wallet_rpc("")
+        # Import those pubkeys to keypool of blank wallet
+        self.nodes[1].createwallet(wallet_name="blank", disable_private_keys=False, blank=True)
+        self.log.info("Pubkeys can be added to the keypool of a blank wallet")
+        wrpc = self.nodes[1].get_wallet_rpc("blank")
         assert wrpc.getwalletinfo()['private_keys_enabled']
         result = wrpc.importmulti(
             [{
-                'desc': 'wpkh(' + pub1 + ')',
+                'desc': 'wpkh(' + pub1 + ')', # use priv1 and drop "keys" after #15024
                 'keypool': True,
+                "keys": [priv1],
                 "timestamp": "now",
             }]
         )
-        assert_equal(result[0]['error']['code'], -8)
-        assert_equal(result[0]['error']['message'], "Keys can only be imported to the keypool when private keys are disabled")
+        assert result[0]['success']
+        assert_equal(wrpc.getwalletinfo()["keypoolsize"], 1)
+        newaddr1 = wrpc.getnewaddress("legacy")
+        assert_equal(addr1, newaddr1)
+        assert(wrpc.getaddressinfo(newaddr1)['ismine'])
 
 if __name__ == '__main__':
     ImportMultiTest().main()
