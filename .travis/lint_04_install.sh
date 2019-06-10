@@ -23,6 +23,6 @@ else
   export PATH
 fi
 
-travis_retry pip install codespell==1.15.0
-travis_retry pip install flake8==3.5.0
-travis_retry pip install vulture==0.29
+travis_retry pip3 install codespell==1.15.0
+travis_retry pip3 install flake8==3.5.0
+travis_retry pip3 install vulture==0.29
