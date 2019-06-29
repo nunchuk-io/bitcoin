@@ -236,8 +236,11 @@ public:
         auto locked_chain = m_wallet->chain().lock();
         LOCK(m_wallet->cs_wallet);
         auto pending = MakeUnique<PendingWalletTxImpl>(*m_wallet);
-        if (!m_wallet->CreateTransaction(*locked_chain, recipients, pending->m_tx, pending->m_key, fee, change_pos,
-                fail_reason, coin_control, sign)) {
+        const TransactionError error = m_wallet->CreateTransaction(*locked_chain, recipients, pending->m_tx, pending->m_key, fee, change_pos,
+                coin_control, sign);
+
+        if (error != TransactionError::OK) {
+            fail_reason = TransactionErrorString(error);
             return {};
         }
         return std::move(pending);

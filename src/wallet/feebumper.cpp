@@ -276,8 +276,9 @@ Result CreateRateBumpTransaction(CWallet* wallet, const uint256& txid, const CCo
     CAmount fee_ret;
     int change_pos_in_out = -1; // No requested location for change
     std::string fail_reason;
-    if (!wallet->CreateTransaction(*locked_chain, recipients, tx_new, reservekey, fee_ret, change_pos_in_out, fail_reason, new_coin_control, false)) {
-        errors.push_back("Unable to create transaction: " + fail_reason);
+    const TransactionError error = wallet->CreateTransaction(*locked_chain, recipients, tx_new, reservekey, fee_ret, change_pos_in_out, new_coin_control, false);
+    if (error != TransactionError::OK) {
+        errors.push_back("Unable to create transaction: " + TransactionErrorString(error));
         return Result::WALLET_ERROR;
     }
 

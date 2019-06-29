@@ -340,10 +340,11 @@ static CTransactionRef SendMoney(interfaces::Chain::Lock& locked_chain, CWallet 
     CRecipient recipient = {scriptPubKey, nValue, fSubtractFeeFromAmount};
     vecSend.push_back(recipient);
     CTransactionRef tx;
-    if (!pwallet->CreateTransaction(locked_chain, vecSend, tx, reservekey, nFeeRequired, nChangePosRet, strError, coin_control)) {
+    const TransactionError error = pwallet->CreateTransaction(locked_chain, vecSend, tx, reservekey, nFeeRequired, nChangePosRet, coin_control);
+    if (error != TransactionError::OK) {
         if (!fSubtractFeeFromAmount && nValue + nFeeRequired > curBalance)
             strError = strprintf("Error: This transaction requires a transaction fee of at least %s", FormatMoney(nFeeRequired));
-        throw JSONRPCError(RPC_WALLET_ERROR, strError);
+        throw JSONRPCTransactionError(error);
     }
     CValidationState state;
     if (!pwallet->CommitTransaction(tx, std::move(mapValue), {} /* orderForm */, reservekey, state)) {
@@ -951,12 +952,12 @@ static UniValue sendmany(const JSONRPCRequest& request)
     CReserveKey keyChange(pwallet);
     CAmount nFeeRequired = 0;
     int nChangePosRet = -1;
-    std::string strFailReason;
     CTransactionRef tx;
-    bool fCreated = pwallet->CreateTransaction(*locked_chain, vecSend, tx, keyChange, nFeeRequired, nChangePosRet, strFailReason, coin_control);
-    if (!fCreated)
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strFailReason);
+    const TransactionError error = pwallet->CreateTransaction(*locked_chain, vecSend, tx, keyChange, nFeeRequired, nChangePosRet, coin_control);
+    if (error != TransactionError::OK)
+        throw JSONRPCTransactionError(error);
     CValidationState state;
+    std::string strFailReason;
     if (!pwallet->CommitTransaction(tx, std::move(mapValue), {} /* orderForm */, keyChange, state)) {
         strFailReason = strprintf("Transaction commit failed:: %s", FormatStateMessage(state));
         throw JSONRPCError(RPC_WALLET_ERROR, strFailReason);
@@ -3203,10 +3204,9 @@ void FundTransaction(CWallet* const pwallet, CMutableTransaction& tx, CAmount& f
         setSubtractFeeFromOutputs.insert(pos);
     }
 
-    std::string strFailReason;
-
-    if (!pwallet->FundTransaction(tx, fee_out, change_position, strFailReason, lockUnspents, setSubtractFeeFromOutputs, coinControl)) {
-        throw JSONRPCError(RPC_WALLET_ERROR, strFailReason);
+    const TransactionError error = pwallet->FundTransaction(tx, fee_out, change_position, lockUnspents, setSubtractFeeFromOutputs, coinControl);
+    if (error != TransactionError::OK) {
+        throw JSONRPCTransactionError(error);
     }
 }
 
