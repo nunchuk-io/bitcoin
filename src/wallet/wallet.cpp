@@ -4080,6 +4080,9 @@ std::unique_ptr<SigningProvider> CWallet::GetSigningProvider(const CScript& scri
 
 LegacyScriptPubKeyMan* CWallet::GetLegacyScriptPubKeyMan() const
 {
+    if (IsWalletFlagSet(WALLET_FLAG_DESCRIPTORS)) {
+        return nullptr;
+    }
     // Legacy wallets only have one ScriptPubKeyMan which is a LegacyScriptPubKeyMan.
     // Everything in m_internal_spk_managers and m_external_spk_managers point to the same legacyScriptPubKeyMan.
     return dynamic_cast<LegacyScriptPubKeyMan*>(m_internal_spk_managers.at(OutputType::LEGACY));
