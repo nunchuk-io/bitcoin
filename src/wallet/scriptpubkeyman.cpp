@@ -1863,9 +1863,34 @@ int64_t DescriptorScriptPubKeyMan::GetTimeFirstKey() const
     return descriptor.creation_time;
 }
 
+std::unique_ptr<FlatSigningProvider> DescriptorScriptPubKeyMan::GetSigningProvider(const CScript& script, bool include_private) const
+{
+    LOCK(cs_desc_man);
+
+    // Find the index of the script
+    auto it = m_map_script_pub_keys.find(script);
+    if (it == m_map_script_pub_keys.end()) {
+        return nullptr;
+    }
+    int32_t index = it->second;
+
+    // Get the scripts, keys, and key origins for this script
+    std::unique_ptr<FlatSigningProvider> out_keys = MakeUnique<FlatSigningProvider>();
+    std::vector<CScript> scripts_temp;
+    if (!descriptor.descriptor->ExpandFromCache(index, descriptor.cache[index - descriptor.range_start], scripts_temp, *out_keys)) return nullptr;
+
+    if (include_private) {
+        FlatSigningProvider master_provider;
+        master_provider.keys = GetKeys();
+        descriptor.descriptor->ExpandPrivate(index, master_provider, *out_keys);
+    }
+
+    return std::move(out_keys);
+}
+
 std::unique_ptr<SigningProvider> DescriptorScriptPubKeyMan::GetSolvingProvider(const CScript& script) const
 {
-    return nullptr;
+    return GetSigningProvider(script, false);
 }
 
 bool DescriptorScriptPubKeyMan::CanProvide(const CScript& script, SignatureData& sigdata)
