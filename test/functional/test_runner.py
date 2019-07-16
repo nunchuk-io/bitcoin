@@ -88,7 +88,9 @@ BASE_SCRIPTS = [
     'feature_segwit.py',
     # vv Tests less than 2m vv
     'wallet_basic.py',
+    'wallet_basic.py --descriptors',
     'wallet_labels.py',
+    'wallet_labels.py --descriptors',
     'p2p_segwit.py',
     'p2p_timeouts.py',
     'wallet_dump.py',
@@ -111,6 +113,7 @@ BASE_SCRIPTS = [
     'feature_abortnode.py',
     # vv Tests less than 30s vv
     'wallet_keypool_topup.py',
+    'wallet_keypool_topup.py --descriptors',
     'interface_zmq.py',
     'interface_bitcoin_cli.py',
     'mempool_resurrect.py',
@@ -144,6 +147,7 @@ BASE_SCRIPTS = [
     'wallet_disable.py',
     'rpc_net.py',
     'wallet_keypool.py',
+    'wallet_keypool.py --descriptors',
     'wallet_descriptor.py',
     'p2p_mempool.py',
     'p2p_blocksonly.py',
@@ -184,6 +188,7 @@ BASE_SCRIPTS = [
     'wallet_listsinceblock.py',
     'p2p_leak.py',
     'wallet_encryption.py',
+    'wallet_encryption.py --descriptors',
     'feature_dersig.py',
     'feature_cltv.py',
     'rpc_uptime.py',
