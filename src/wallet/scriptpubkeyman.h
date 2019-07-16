@@ -207,6 +207,8 @@ public:
 
     virtual uint256 GetID() const { return uint256(); }
 
+    virtual void SetType(OutputType type, bool internal) {}
+
     /** Prepends the wallet name in logging output to ease debugging in multi-wallet use cases */
     template<typename... Params>
     void WalletLogPrintf(std::string fmt, Params... parameters) const {
@@ -348,6 +350,8 @@ public:
     bool CanProvide(const CScript& script, SignatureData& sigdata) override;
 
     uint256 GetID() const override;
+
+    void SetType(OutputType type, bool internal) override;
 
     // Map from Key ID to key metadata.
     std::map<CKeyID, CKeyMetadata> mapKeyMetadata GUARDED_BY(cs_KeyStore);
