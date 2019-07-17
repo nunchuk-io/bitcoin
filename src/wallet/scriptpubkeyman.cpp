@@ -1505,11 +1505,6 @@ bool DescriptorScriptPubKeyMan::CanGetAddresses(bool internal)
     return false;
 }
 
-bool DescriptorScriptPubKeyMan::Upgrade(int prev_version, std::string& error)
-{
-    return false;
-}
-
 bool DescriptorScriptPubKeyMan::HavePrivateKeys() const
 {
     return false;
@@ -1547,11 +1542,6 @@ std::unique_ptr<SigningProvider> DescriptorScriptPubKeyMan::GetSigningProvider(c
 bool DescriptorScriptPubKeyMan::CanProvide(const CScript& script, SignatureData& sigdata)
 {
     return false;
-}
-
-const CKeyMetadata* DescriptorScriptPubKeyMan::GetMetadata(uint160 id) const
-{
-    return nullptr;
 }
 
 uint256 DescriptorScriptPubKeyMan::GetID() const

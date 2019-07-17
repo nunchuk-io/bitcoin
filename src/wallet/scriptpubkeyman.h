@@ -491,8 +491,6 @@ public:
 
     bool SetupGeneration(bool force = false) override;
 
-    bool Upgrade(int prev_version, std::string& error) override;
-
     bool HavePrivateKeys() const override;
 
     void RewriteDB() override;
@@ -502,8 +500,6 @@ public:
     unsigned int GetKeyPoolSize() const override;
 
     int64_t GetTimeFirstKey() const override;
-
-    const CKeyMetadata* GetMetadata(uint160 id) const override;
 
     bool CanGetAddresses(bool internal = false) override;
 
