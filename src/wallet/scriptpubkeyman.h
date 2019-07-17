@@ -486,8 +486,6 @@ public:
 
     bool SetupGeneration(bool force = false) override;
 
-    bool Upgrade(int prev_version, std::string& error) override;
-
     bool HavePrivateKeys() const override;
 
     void RewriteDB() override;
