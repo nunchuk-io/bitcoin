@@ -148,7 +148,8 @@ static UniValue signerdisplayaddress(const JSONRPCRequest& request)
     }
 
     CScript scriptPubKey = GetScriptForDestination(dest);
-    auto descriptor = InferDescriptor(scriptPubKey, *pwallet);
+    std::unique_ptr<SigningProvider> provider = pwallet->GetSigningProvider(scriptPubKey);
+    auto descriptor = InferDescriptor(scriptPubKey, *provider);
 
     if (!descriptor->IsSolvable()) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Key is not solvable");
@@ -192,13 +193,11 @@ UniValue signerfetchkeys(const JSONRPCRequest& request)
         throw std::runtime_error(
             RPCHelpMan{"signerfetchkeys",
                 "Obtains keys from external signer and imports them into the wallet.\n"
-                "For interoperability reasons (BIP 44, 49 and 84), it is recommended that you\n"
-                "check -addresstype and -changetype settings before calling this.\n"
-                "It is also recommended that you continue to use the same address type with this\n"
-                "wallet. Call enumeratesigners first.\n",
+                "Call enumeratesigners first.\n",
                 {
                     {"account",     RPCArg::Type::NUM, /* default_val */ "0", "BIP32 account to use"},
                     {"fingerprint", RPCArg::Type::STR, /* default_val */ "", "Master key fingerprint of signer"},
+                    // TODO: remove when #16528 can handle infinite range
                     {"range", RPCArg::Type::RANGE, /* default */ "set by -keypool", "The range of HD chain indexes to import (either end or [begin,end])"},
                 },
                 RPCResult{
@@ -224,18 +223,6 @@ UniValue signerfetchkeys(const JSONRPCRequest& request)
     if (!receive_descriptor_vals.isArray()) throw JSONRPCError(RPC_WALLET_ERROR, "Unexpect result");
     if (!change_descriptor_vals.isArray()) throw JSONRPCError(RPC_WALLET_ERROR, "Unexpect result");
 
-    // Parse and check descriptors
-    std::vector<std::unique_ptr<Descriptor>> receive_descriptors;
-    std::vector<std::unique_ptr<Descriptor>> change_descriptors;
-
-    for (const UniValue& desc : receive_descriptor_vals.get_array().getValues()) {
-        receive_descriptors.push_back(ParseDescriptor(desc, true, true));
-    }
-
-    for (const UniValue& desc : change_descriptor_vals.get_array().getValues()) {
-        change_descriptors.push_back(ParseDescriptor(desc, true, true));
-    }
-
     uint64_t keypool_target_size = 0;
     keypool_target_size = gArgs.GetArg("-keypool", DEFAULT_KEYPOOL_SIZE);
     int64_t range_begin = 0;
@@ -249,94 +236,31 @@ UniValue signerfetchkeys(const JSONRPCRequest& request)
     range.push_back(range_begin);
     range.push_back(range_end);
 
-    // Use importmulti to process the descriptors:
+    // Use importdescriptors to process the descriptors:
     // TODO: extract reusable non-RPC code from importmulti
     UniValue importdata(UniValue::VARR);
 
     if (keypool_target_size == 0) throw JSONRPCError(RPC_WALLET_ERROR, "-keypool must be > 0");
 
-    UniValue receive_key_data(UniValue::VOBJ);
-
-    // Pick receive descriptor based on -addresstype
-    AddressType address_type;
-    bool receive_segwit = false;
-    switch (pwallet->m_default_address_type) {
-        case OutputType::LEGACY: {
-        address_type = AddressType::BASE58;
-        break;
-    }
-    case OutputType::P2SH_SEGWIT: {
-        address_type = AddressType::BASE58;
-        receive_segwit = true;
-        break;
-    }
-    case OutputType::BECH32: {
-        address_type = AddressType::BECH32;
-        receive_segwit = true;
-        break;
-    }
-    default:
-        assert(false);
+    for (const UniValue& desc : receive_descriptor_vals.get_array().getValues()) {
+        UniValue receive_key_data(UniValue::VOBJ);
+        receive_key_data.pushKV("desc", desc);
+        receive_key_data.pushKV("range", range);
+        receive_key_data.pushKV("active", true);
+        receive_key_data.pushKV("internal", false);
+        receive_key_data.pushKV("watchonly", true);
+        importdata.push_back(receive_key_data);
     }
 
-    std::unique_ptr<Descriptor> match_desc;
-    for (auto&& desc : receive_descriptors) {
-        if (desc->GetAddressType() == address_type && desc->IsSegWit() == receive_segwit) {
-            match_desc = std::move(desc);
-            break;
-        }
+    for (const UniValue& desc : change_descriptor_vals.get_array().getValues()) {
+        UniValue change_key_data(UniValue::VOBJ);
+        change_key_data.pushKV("desc", desc);
+        change_key_data.pushKV("range", range);
+        change_key_data.pushKV("active", true);
+        change_key_data.pushKV("internal", true);
+        change_key_data.pushKV("watchonly", true);
+        importdata.push_back(change_key_data);
     }
-
-    if (!match_desc) throw JSONRPCError(RPC_WALLET_ERROR, "No descriptor found for wallet address type");
-    receive_key_data.pushKV("desc", match_desc->ToString());
-
-    receive_key_data.pushKV("range", range);
-    receive_key_data.pushKV("internal", false);
-    receive_key_data.pushKV("keypool", true);
-    receive_key_data.pushKV("watchonly", true);
-    importdata.push_back(receive_key_data);
-
-    UniValue change_key_data(UniValue::VOBJ);
-
-    // Pick receive descriptor based on -changetype
-    const OutputType default_change_type = pwallet->m_default_change_type == OutputType::CHANGE_AUTO ? pwallet->m_default_address_type : pwallet->m_default_change_type;
-    AddressType change_type;
-    bool change_segwit = false;
-    switch (default_change_type) {
-        case OutputType::LEGACY: {
-        change_type = AddressType::BASE58;
-        break;
-    }
-    case OutputType::P2SH_SEGWIT: {
-        change_type = AddressType::BASE58;
-        change_segwit = true;
-        break;
-    }
-    case OutputType::BECH32: {
-        change_type = AddressType::BECH32;
-        change_segwit = true;
-        break;
-    }
-    default:
-        assert(false);
-    }
-
-    match_desc.reset(nullptr);
-    for (auto&& desc : change_descriptors) {
-        if (desc->GetAddressType() == change_type && desc->IsSegWit() == change_segwit) {
-            match_desc = std::move(desc);
-            break;
-        }
-    }
-
-    if (!match_desc) throw JSONRPCError(RPC_WALLET_ERROR, "No descriptor found for wallet change address type");
-    change_key_data.pushKV("desc", match_desc->ToString());
-
-    change_key_data.pushKV("range", range);
-    change_key_data.pushKV("internal", true);
-    change_key_data.pushKV("keypool", true);
-    change_key_data.pushKV("watchonly", true);
-    importdata.push_back(change_key_data);
 
     UniValue result(UniValue::VARR);
     {
@@ -346,8 +270,7 @@ UniValue signerfetchkeys(const JSONRPCRequest& request)
         LOCK(pwallet->cs_wallet);
         EnsureWalletIsUnlocked(pwallet);
         for (const UniValue& data : importdata.getValues()) {
-            // TODO: prevent inserting the same key twice
-            result.push_back(ProcessImport(pwallet, data, now));
+            result.push_back(ProcessDescriptorImport(pwallet, data, now));
         }
     }
 
