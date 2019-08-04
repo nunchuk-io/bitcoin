@@ -9,6 +9,7 @@
 #include <util/bip32.h>
 #include <util/strencodings.h>
 #include <util/translation.h>
+#include <wallet/externalsigner.h>
 #include <wallet/scriptpubkeyman.h>
 
 bool LegacyScriptPubKeyMan::GetNewDestination(const OutputType type, CTxDestination& dest, std::string& error)
@@ -1949,6 +1950,38 @@ bool DescriptorScriptPubKeyMan::CanProvide(const CScript& script, SignatureData&
 
 bool DescriptorScriptPubKeyMan::SignTransaction(CMutableTransaction& tx, const std::map<COutPoint, Coin>& coins, int sighash, std::map<int, std::string>& input_errors) const
 {
+    // TODO: ExternalSigner wallet should have its own DescriptorScriptPubKeyMan subclass
+    if (m_storage.IsWalletFlagSet(WALLET_FLAG_EXTERNAL_SIGNER)) {
+#ifdef ENABLE_EXTERNAL_SIGNER
+        PartiallySignedTransaction psbtx(tx);
+        const TransactionError err = FillPSBT(psbtx, SIGHASH_ALL, false, true);
+        assert(err == TransactionError::OK); // TODO: return TransactionError
+
+        const std::string command = gArgs.GetArg("-signer", ""); // DEFAULT_EXTERNAL_SIGNER);
+        if (command == "") throw std::runtime_error(std::string(__func__) + ": restart bitcoind with -signer=<cmd>");
+
+        std::string chain = gArgs.GetChainName();
+        const bool mainnet = chain == CBaseChainParams::MAIN;
+        std::vector<ExternalSigner> signers;
+        ExternalSigner::Enumerate(command, signers, mainnet);
+        if (signers.empty()) throw std::runtime_error(std::string(__func__) + ": No external signers found");
+        // TODO: add fingerprint argument in case of multiple signers
+        ExternalSigner signer = signers[0];
+
+        std::string strFailReason; // unused
+        if( !signer.signTransaction(psbtx, strFailReason)) return false;
+        bool complete = FinalizeAndExtractPSBT(psbtx, tx);
+        if (!complete) {
+            throw std::runtime_error(std::string(__func__) +  "PSBT incomplete");
+            return false;
+        }
+        return true;
+#else
+        throw std::runtime_error(std::string(__func__) +  "Wallets with external signers require Boost::System library.");
+        return false;
+#endif
+    } // The above will return. No else statement to avoid indentation
+
     std::unique_ptr<FlatSigningProvider> keys = MakeUnique<FlatSigningProvider>();
     for (const auto& coin_pair : coins) {
         std::unique_ptr<FlatSigningProvider> coin_keys = std::move(GetSigningProvider(coin_pair.second.out.scriptPubKey, true));
