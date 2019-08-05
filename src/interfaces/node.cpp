@@ -45,7 +45,7 @@ fs::path GetWalletDir();
 std::vector<fs::path> ListWalletDir();
 std::vector<std::shared_ptr<CWallet>> GetWallets();
 std::shared_ptr<CWallet> LoadWallet(interfaces::Chain& chain, const std::string& name, std::string& error, std::string& warning);
-std::shared_ptr<CWallet> CreateWallet(interfaces::Chain& chain, const std::string& name, std::string& error, std::string& warning, WalletCreationStatus& status, const SecureString& passphrase, uint64_t wallet_creation_flags);
+WalletCreationStatus CreateWallet(interfaces::Chain& chain, const SecureString& passphrase, uint64_t wallet_creation_flags, const std::string& name, std::string& error, std::string& warning, std::shared_ptr<CWallet>& result);
 
 namespace interfaces {
 
@@ -259,10 +259,12 @@ public:
     {
         return MakeWallet(LoadWallet(*m_interfaces.chain, name, error, warning));
     }
-    std::unique_ptr<Wallet> createWallet(const std::string& name, std::string& error, std::string& warning, const SecureString& passphrase, uint64_t wallet_creation_flags) override
+    WalletCreationStatus createWallet(const SecureString& passphrase, uint64_t wallet_creation_flags, const std::string& name, std::string& error, std::string& warning, std::unique_ptr<Wallet>& result) override
     {
-        WalletCreationStatus status;
-        return MakeWallet(CreateWallet(*m_interfaces.chain, name, error, warning, status, passphrase, wallet_creation_flags));
+        std::shared_ptr<CWallet> wallet;
+        WalletCreationStatus status = CreateWallet(*m_interfaces.chain, passphrase, wallet_creation_flags, name, error, warning, wallet);
+        result = MakeWallet(wallet);
+        return status;
     }
     std::unique_ptr<Handler> handleInitMessage(InitMessageFn fn) override
     {
