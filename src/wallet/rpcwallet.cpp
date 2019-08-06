@@ -365,7 +365,8 @@ static UniValue sendtoaddress(const JSONRPCRequest& request)
             "       \"UNSET\"\n"
             "       \"ECONOMICAL\"\n"
             "       \"CONSERVATIVE\"\n"
-            "       \"EXPLICIT\""},
+            "       \"BTC/KB\"\n"
+            "       \"SAT/B\""},
                     {"avoid_reuse", RPCArg::Type::BOOL, /* default */ "true", "(only available if avoid_reuse wallet flag is set) Avoid spending from dirty addresses; addresses are considered\n"
             "                             dirty if they have previously been used in a transaction."},
                 },
@@ -376,7 +377,7 @@ static UniValue sendtoaddress(const JSONRPCRequest& request)
                     HelpExampleCli("sendtoaddress", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1")
             + HelpExampleCli("sendtoaddress", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"donation\" \"seans outpost\"")
             + HelpExampleCli("sendtoaddress", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"\" \"\" true")
-            + HelpExampleCli("sendtoaddress", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"\" \"\" false true 0.00002 EXPLICIT")
+            + HelpExampleCli("sendtoaddress", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"\" \"\" false true 2 SAT/B")
             + HelpExampleRpc("sendtoaddress", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", 0.1, \"donation\", \"seans outpost\"")
                 },
             }.Check(request);
@@ -426,12 +427,17 @@ static UniValue sendtoaddress(const JSONRPCRequest& request)
     coin_control.m_avoid_partial_spends |= coin_control.m_avoid_address_reuse;
 
     if (!request.params[6].isNull()) {
-        if (coin_control.m_fee_mode != FeeEstimateMode::EXPLICIT) {
-            coin_control.m_confirm_target = ParseConfirmTarget(request.params[6], pwallet->chain().estimateMaxBlocks());
-        } else {
-            coin_control.m_feerate = CFeeRate(AmountFromValue(request.params[6]));
+        if (coin_control.m_fee_mode == FeeEstimateMode::BTC_KB || coin_control.m_fee_mode == FeeEstimateMode::SAT_B) {
+            CAmount fee_rate = AmountFromValue(request.params[6]);
+            if (coin_control.m_fee_mode == FeeEstimateMode::SAT_B) {
+                fee_rate = fee_rate / 100000; // 1 Sat / B = 0.00001 BTC / kB
+            }
+            coin_control.m_feerate = CFeeRate(fee_rate);
+
             // default RBF to true for explicit fee rate mode
             coin_control.m_signal_bip125_rbf = (coin_control.m_signal_bip125_rbf ? *coin_control.m_signal_bip125_rbf : false) || request.params[5].isNull();
+        } else {
+            coin_control.m_confirm_target = ParseConfirmTarget(request.params[6], pwallet->chain().estimateMaxBlocks());
         }
     }
 
@@ -829,7 +835,8 @@ static UniValue sendmany(const JSONRPCRequest& request)
             "       \"UNSET\"\n"
             "       \"ECONOMICAL\"\n"
             "       \"CONSERVATIVE\"\n"
-            "       \"EXPLICIT\""},
+            "       \"BTC/KB\"\n"
+            "       \"SAT/B\""},
                 },
                  RPCResult{
             "\"txid\"                   (string) The transaction id for the send. Only 1 transaction is created regardless of \n"
@@ -883,12 +890,17 @@ static UniValue sendmany(const JSONRPCRequest& request)
     }
 
     if (!request.params[6].isNull()) {
-        if (coin_control.m_fee_mode != FeeEstimateMode::EXPLICIT) {
-            coin_control.m_confirm_target = ParseConfirmTarget(request.params[6], pwallet->chain().estimateMaxBlocks());
-        } else {
-            coin_control.m_feerate = CFeeRate(AmountFromValue(request.params[6]));
+        if (coin_control.m_fee_mode == FeeEstimateMode::BTC_KB || coin_control.m_fee_mode == FeeEstimateMode::SAT_B) {
+            CAmount fee_rate = AmountFromValue(request.params[6]);
+            if (coin_control.m_fee_mode == FeeEstimateMode::SAT_B) {
+                fee_rate = fee_rate / 100000; // 1 Sat / B = 0.00001 BTC / kB
+            }
+            coin_control.m_feerate = CFeeRate(fee_rate);
+
             // default RBF to true for explicit fee rate mode
             coin_control.m_signal_bip125_rbf = (coin_control.m_signal_bip125_rbf ? *coin_control.m_signal_bip125_rbf : false) || request.params[5].isNull();
+        } else {
+            coin_control.m_confirm_target = ParseConfirmTarget(request.params[6], pwallet->chain().estimateMaxBlocks());
         }
     }
 

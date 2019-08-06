@@ -50,7 +50,8 @@ enum class FeeEstimateMode {
     UNSET,        //!< Use default settings based on other criteria
     ECONOMICAL,   //!< Force estimateSmartFee to use non-conservative estimates
     CONSERVATIVE, //!< Force estimateSmartFee to use conservative estimates
-    EXPLICIT,     //!< Use explicit fee given in coin control
+    BTC_KB,     //!< Use explicit fee given in coin control in BTC/kB
+    SAT_B,     //!< Use explicit fee given in coin control in satoshi per byte
 };
 
 /* Used to return detailed information about a feerate bucket */
