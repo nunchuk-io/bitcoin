@@ -3323,16 +3323,20 @@ static UniValue bumpfee(const JSONRPCRequest& request)
         RPCTypeCheckObj(options,
             {
                 {"confTarget", UniValueType(UniValue::VNUM)},
+                {"conf_target", UniValueType(UniValue::VNUM)},
                 {"totalFee", UniValueType(UniValue::VNUM)},
                 {"replaceable", UniValueType(UniValue::VBOOL)},
                 {"estimate_mode", UniValueType(UniValue::VSTR)},
             },
             true, true);
 
-        if (options.exists("confTarget") && options.exists("totalFee")) {
+        auto conf_target = options.exists("confTarget") ? options["confTarget"] : options["conf_target"];
+        auto conf_target_exists = !conf_target.isNull();
+
+        if (conf_target_exists && options.exists("totalFee")) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "confTarget and totalFee options should not both be set. Please provide either a confirmation target for fee estimation or an explicit total fee for the transaction.");
-        } else if (options.exists("confTarget")) { // TODO: alias this to conf_target
-            coin_control.m_confirm_target = ParseConfirmTarget(options["confTarget"], pwallet->chain().estimateMaxBlocks());
+        } else if (conf_target_exists) {
+            coin_control.m_confirm_target = ParseConfirmTarget(conf_target, pwallet->chain().estimateMaxBlocks());
         } else if (options.exists("totalFee")) {
             if (!pwallet->chain().rpcEnableDeprecated("totalFee")) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, "totalFee argument has been deprecated and will be removed in 0.20. Please use -deprecatedrpc=totalFee to continue using this argument until removal.");
