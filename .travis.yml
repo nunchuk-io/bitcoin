@@ -225,3 +225,25 @@ jobs:
         RUN_FUNCTIONAL_TESTS=false
         GOAL="deploy"
         BITCOIN_CONFIG="--enable-gui --enable-reduce-exports --enable-werror"
+
+  - stage: test
+    name: 'macOS 10.10 native'
+    os: osx
+    # Use the most recent version:
+    # Xcode 11, macOS 10.14, JDK 12.0.1
+    # https://docs.travis-ci.com/user/reference/osx/#OS-X-Version
+    osx_image: xcode11
+    language:
+      - ruby
+      - python
+    python:
+        - "3.5.6"
+    rvm:
+      - 2.6.0
+    env: # Override default env
+      BREW_PACKAGES="automake berkeley-db4 libtool boost miniupnpc openssl pkg-config protobuf qt qrencode librsvg pyenv"
+      RUN_UNIT_TESTS=true
+      RUN_FUNCTIONAL_TESTS=true
+      GOAL="deploy"
+      BITCOIN_CONFIG="--enable-gui --enable-reduce-exports --enable-werror"
+    sudo: false

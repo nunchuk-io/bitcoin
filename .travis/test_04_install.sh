@@ -4,6 +4,12 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+# TODO: move down after #13728 is rebased / merged
+if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+   travis_retry brew install $BREW_PACKAGES
+   return 0
+fi
+
 export LC_ALL=C.UTF-8
 
 travis_retry docker pull "$DOCKER_NAME_TAG"
@@ -31,4 +37,3 @@ DOCKER_EXEC () {
 
 travis_retry DOCKER_EXEC apt-get update
 travis_retry DOCKER_EXEC apt-get install --no-install-recommends --no-upgrade -qq $PACKAGES $DOCKER_PACKAGES
-
