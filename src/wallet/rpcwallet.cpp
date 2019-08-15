@@ -158,7 +158,7 @@ static std::string LabelFromValue(const UniValue& value)
     return label;
 }
 
-static void SetFeeEstimateMode(CWallet* const pwallet, CCoinControl& cc, const UniValue& estimate_mode, const UniValue& estimate_param, bool may_set_rbf = true)
+static void SetFeeEstimateMode(CWallet* const pwallet, CCoinControl& cc, const UniValue& estimate_mode, const UniValue& estimate_param)
 {
     if (!estimate_mode.isNull()) {
         if (!FeeModeFromString(estimate_mode.get_str(), cc.m_fee_mode)) {
@@ -176,7 +176,9 @@ static void SetFeeEstimateMode(CWallet* const pwallet, CCoinControl& cc, const U
         }
         cc.m_feerate = CFeeRate(fee_rate);
         // default RBF to true for explicit fee rate mode
-        cc.m_signal_bip125_rbf = (cc.m_signal_bip125_rbf ? *cc.m_signal_bip125_rbf : false) || may_set_rbf;
+        if (cc.m_signal_bip125_rbf) {
+            *cc.m_signal_bip125_rbf = true;
+        }
     } else {
         cc.m_confirm_target = ParseConfirmTarget(estimate_param, pwallet->chain().estimateMaxBlocks());
     }
@@ -438,8 +440,7 @@ static UniValue sendtoaddress(const JSONRPCRequest& request)
     // We also enable partial spend avoidance if reuse avoidance is set.
     coin_control.m_avoid_partial_spends |= coin_control.m_avoid_address_reuse;
 
-    // We allow RBF to be set if the user did not provide a value for it already (request.params[5])
-    SetFeeEstimateMode(pwallet, coin_control, request.params[7], request.params[6], request.params[5].isNull());
+    SetFeeEstimateMode(pwallet, coin_control, request.params[7], request.params[6]);
 
     EnsureWalletIsUnlocked(pwallet);
 
@@ -876,8 +877,7 @@ static UniValue sendmany(const JSONRPCRequest& request)
         coin_control.m_signal_bip125_rbf = request.params[5].get_bool();
     }
 
-    // We allow RBF to be set if the user did not provide a value for it already (request.params[5])
-    SetFeeEstimateMode(pwallet, coin_control, request.params[7], request.params[6], request.params[5].isNull());
+    SetFeeEstimateMode(pwallet, coin_control, request.params[7], request.params[6]);
 
     std::set<CTxDestination> destinations;
     std::vector<CRecipient> vecSend;
@@ -3049,7 +3049,7 @@ void FundTransaction(CWallet* const pwallet, CMutableTransaction& tx, CAmount& f
         if (options.exists("replaceable")) {
             coinControl.m_signal_bip125_rbf = options["replaceable"].get_bool();
         }
-        SetFeeEstimateMode(pwallet, coinControl, options["estimate_mode"], options["conf_target"], !options.exists("replaceable"));
+        SetFeeEstimateMode(pwallet, coinControl, options["estimate_mode"], options["conf_target"]);
       }
     }
 
@@ -3350,7 +3350,7 @@ static UniValue bumpfee(const JSONRPCRequest& request)
             coin_control.m_signal_bip125_rbf = options["replaceable"].get_bool();
         }
         if (!options.exists("totalFee")) {
-            SetFeeEstimateMode(pwallet, coin_control, options["estimate_mode"], conf_target, !options.exists("replaceable"));
+            SetFeeEstimateMode(pwallet, coin_control, options["estimate_mode"], conf_target);
         } else if (options.exists("estimate_mode")) {
             if (!FeeModeFromString(options["estimate_mode"].get_str(), coin_control.m_fee_mode)) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid estimate_mode parameter");
