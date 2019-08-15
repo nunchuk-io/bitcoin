@@ -5,6 +5,7 @@
 
 #include <policy/fees.h>
 
+#include <sstream>
 #include <string>
 
 std::string StringForFeeReason(FeeReason reason) {
@@ -26,15 +27,29 @@ std::string StringForFeeReason(FeeReason reason) {
     return reason_string->second;
 }
 
-bool FeeModeFromString(const std::string& mode_string, FeeEstimateMode& fee_estimate_mode) {
+const std::map<std::string, FeeEstimateMode>& FeeModeMap() {
     static const std::map<std::string, FeeEstimateMode> fee_modes = {
         {"UNSET", FeeEstimateMode::UNSET},
         {"ECONOMICAL", FeeEstimateMode::ECONOMICAL},
         {"CONSERVATIVE", FeeEstimateMode::CONSERVATIVE},
     };
-    auto mode = fee_modes.find(mode_string);
+    return fee_modes;
+}
 
-    if (mode == fee_modes.end()) return false;
+std::string FeeModes(const std::string& delimiter = ", ") {
+    std::ostringstream r;
+    bool first = true;
+    for (const auto& i : FeeModeMap()) {
+        r << (first ? "" : delimiter) + i.first;
+        first = false;
+    }
+    return r.str();
+}
+
+bool FeeModeFromString(const std::string& mode_string, FeeEstimateMode& fee_estimate_mode) {
+    auto mode = FeeModeMap().find(mode_string);
+
+    if (mode == FeeModeMap().end()) return false;
 
     fee_estimate_mode = mode->second;
     return true;
