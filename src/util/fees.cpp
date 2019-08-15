@@ -33,6 +33,8 @@ const std::map<std::string, FeeEstimateMode>& FeeModeMap() {
         {"UNSET", FeeEstimateMode::UNSET},
         {"ECONOMICAL", FeeEstimateMode::ECONOMICAL},
         {"CONSERVATIVE", FeeEstimateMode::CONSERVATIVE},
+        {(CURRENCY_UNIT + "/KB"), FeeEstimateMode::BTC_KB},
+        {(ToUpper(CURRENCY_ATOM) + "/B"), FeeEstimateMode::SAT_B},
     };
     return fee_modes;
 }
