@@ -4,6 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <policy/fees.h>
+#include <util/strencodings.h>
 
 #include <sstream>
 #include <string>
@@ -47,7 +48,7 @@ std::string FeeModes(const std::string& delimiter = ", ") {
 }
 
 bool FeeModeFromString(const std::string& mode_string, FeeEstimateMode& fee_estimate_mode) {
-    auto mode = FeeModeMap().find(mode_string);
+    auto mode = FeeModeMap().find(ToUpper(mode_string));
 
     if (mode == FeeModeMap().end()) return false;
 
