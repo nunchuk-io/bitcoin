@@ -187,7 +187,18 @@ def main():
     # Skip entries with invalid address.
     ips = [ip for ip in ips if ip is not None]
     print('%s Skip entries with invalid address' % (ip_stats(ips)), file=sys.stderr)
-    # Skip duplicattes (in case multiple seeds files were concatenated)
+    # Require at least 50% 30-day uptime for clearnet, 10% for onion.
+    req_uptime = {
+        'ipv4': 50,
+        'ipv6': 50,
+        'onion': 10,
+    }
+    ips = [ip for ip in ips if ip['uptime'] > req_uptime[ip['net']]]
+    print('%s Require minimum uptime' % (ip_stats(ips)), file=sys.stderr)
+    # Sort by availability (and use last success as tie breaker)
+    ips.sort(key=lambda x: (x['uptime'], x['lastsuccess'], x['ip']), reverse=True)
+    # Skip duplicattes (in case multiple seeds files were concatenated). This
+    # should be done after the uptime check which might vary per seeder.
     ips = dedup(ips)
     print('%s After removing duplicates' % (ip_stats(ips)), file=sys.stderr)
     # Skip entries from suspicious hosts.
@@ -199,19 +210,9 @@ def main():
     # Require service bit 1.
     ips = [ip for ip in ips if (ip['service'] & 1) == 1]
     print('%s Require service bit 1' % (ip_stats(ips)), file=sys.stderr)
-    # Require at least 50% 30-day uptime for clearnet, 10% for onion.
-    req_uptime = {
-        'ipv4': 50,
-        'ipv6': 50,
-        'onion': 10,
-    }
-    ips = [ip for ip in ips if ip['uptime'] > req_uptime[ip['net']]]
-    print('%s Require minimum uptime' % (ip_stats(ips)), file=sys.stderr)
     # Require a known and recent user agent.
     ips = [ip for ip in ips if PATTERN_AGENT.match(ip['agent'])]
     print('%s Require a known and recent user agent' % (ip_stats(ips)), file=sys.stderr)
-    # Sort by availability (and use last success as tie breaker)
-    ips.sort(key=lambda x: (x['uptime'], x['lastsuccess'], x['ip']), reverse=True)
     # Filter out hosts with multiple bitcoin ports, these are likely abusive
     ips = filtermultiport(ips)
     print('%s Filter out hosts with multiple bitcoin ports' % (ip_stats(ips)), file=sys.stderr)
