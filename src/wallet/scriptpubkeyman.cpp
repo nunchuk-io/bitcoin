@@ -262,7 +262,7 @@ bool LegacyScriptPubKeyMan::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
     return true;
 }
 
-bool LegacyScriptPubKeyMan::GetReservedDestination(const OutputType type, bool internal, int64_t& index, CKeyPool& keypool)
+bool LegacyScriptPubKeyMan::GetReservedDestination(const OutputType type, bool internal, CTxDestination& address, int64_t& index, CKeyPool& keypool)
 {
     if (!CanGetAddresses(internal)) {
         return false;
@@ -271,6 +271,7 @@ bool LegacyScriptPubKeyMan::GetReservedDestination(const OutputType type, bool i
     if (!ReserveKeyFromKeyPool(index, keypool, internal)) {
         return false;
     }
+    address = GetDestinationForKey(keypool.vchPubKey, type);
     return true;
 }
 
@@ -1101,6 +1102,9 @@ void LegacyScriptPubKeyMan::KeepKey(int64_t nIndex)
     // Remove from key pool
     WalletBatch batch(m_storage.GetDatabase());
     batch.ErasePool(nIndex);
+    CPubKey pk;
+    assert(GetPubKey(m_reserved_key_to_index.at(nIndex), pk));
+    LearnAllRelatedScripts(pk);
     WalletLogPrintf("keypool keep %d\n", nIndex);
 }
 
