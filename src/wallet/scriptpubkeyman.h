@@ -152,7 +152,7 @@ public:
 
     virtual bool GetReservedDestination(const OutputType type, bool internal, CTxDestination& address, int64_t& index, CKeyPool& keypool) { return false; }
     virtual void KeepDestination(int64_t index) {}
-    virtual void ReturnDestination(int64_t index, bool internal, const CPubKey& pubkey) {}
+    virtual void ReturnDestination(int64_t index, bool internal, const CTxDestination& addr) {}
 
     virtual bool TopUp(unsigned int size = 0) { return false; }
 
@@ -246,6 +246,8 @@ private:
     std::set<int64_t> set_pre_split_keypool GUARDED_BY(cs_wallet);
     int64_t m_max_keypool_index GUARDED_BY(cs_wallet) = 0;
     std::map<CKeyID, int64_t> m_pool_key_to_index;
+    // Tracks keypool indexes to CKeyIDs of keys that have been taken out of the keypool but may be returned to it
+    std::map<int64_t, CKeyID> m_reserved_key_to_index;
 
     //! Fetches a key from the keypool
     bool GetKeyFromPool(CPubKey &key, bool internal = false);
@@ -275,7 +277,7 @@ public:
 
     bool GetReservedDestination(const OutputType type, bool internal, CTxDestination& address, int64_t& index, CKeyPool& keypool) override;
     void KeepDestination(int64_t index) override;
-    void ReturnDestination(int64_t index, bool internal, const CPubKey& pubkey) override;
+    void ReturnDestination(int64_t index, bool internal, const CTxDestination&) override;
 
     bool TopUp(unsigned int size = 0) override;
 
