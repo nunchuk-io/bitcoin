@@ -299,7 +299,7 @@ void LegacyScriptPubKeyMan::KeepDestination(int64_t index)
     KeepKey(index);
 }
 
-void LegacyScriptPubKeyMan::ReturnDestination(int64_t index, bool internal, const CTxDestination& addr)
+void LegacyScriptPubKeyMan::ReturnDestination(int64_t index, bool internal)
 {
     ReturnKey(index, internal, m_reserved_key_to_index[index]);
     m_reserved_key_to_index.erase(index);
