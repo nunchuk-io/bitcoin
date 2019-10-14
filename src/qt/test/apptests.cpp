@@ -48,8 +48,22 @@ void TestRpcCommand(RPCConsole* console)
 }
 } // namespace
 
-//! Entry point for BitcoinApplication tests.
-void AppTests::appTests()
+//! Entry point for BitcoinApplication tests 1.
+void AppTests::appTests1()
+{
+    m_test_run = 1;
+    runAppTest();
+}
+
+//! Entry point for BitcoinApplication tests 2.
+void AppTests::appTests2()
+{
+    m_test_run = 2;
+    runAppTest();
+}
+
+
+void AppTests::runAppTest()
 {
 #ifdef Q_OS_MAC
     if (QApplication::platformName() == "minimal") {
@@ -99,11 +113,21 @@ void AppTests::appTests()
 void AppTests::guiTests(BitcoinGUI* window)
 {
     HandleCallback callback{"guiTests", *this};
-    // Call AppTests::consoleTests() once console is shown, then wait for callback
-    connect(window, &BitcoinGUI::consoleShown, this, &AppTests::consoleTests);
-    expectCallback("consoleTests");
-    QAction* action = window->findChild<QAction*>("openRPCConsoleAction");
-    action->activate(QAction::Trigger);
+    switch (m_test_run) {
+    case 1: {
+        // Call AppTests::consoleTests() once console is shown, then wait for callback
+        connect(window, &BitcoinGUI::consoleShown, this, &AppTests::consoleTests);
+        expectCallback("consoleTests");
+        QAction* action = window->findChild<QAction*>("openRPCConsoleAction");
+        action->activate(QAction::Trigger);
+        break;
+    }
+    case 2:
+        // Do nothing
+        break;
+    default:
+        assert(false);
+    }
 }
 
 //! Entry point for RPCConsole tests.
