@@ -2305,7 +2305,7 @@ bool CChainState::FlushStateToDisk(
                 return AbortNode(state, "Disk space is too low!", _("Error: Disk space is too low!").translated, CClientUIInterface::MSG_NOPREFIX);
             }
             // Flush the chainstate (which may refer to block index entries).
-            if (!CoinsTip().Flush())
+            if (!CoinsTip().Flush(!fFlushForPrune))
                 return AbortNode(state, "Failed to write to coin database");
             nLastFlush = nNow;
             full_flush_completed = true;
