@@ -3314,7 +3314,7 @@ bool ReserveDestination::GetReservedDestination(CTxDestination& dest, bool inter
 void ReserveDestination::KeepDestination()
 {
     if (nIndex != -1) {
-        m_spk_man->KeepDestination(nIndex);
+        m_spk_man->KeepDestination(type, nIndex);
     }
     nIndex = -1;
     address = CNoDestination();

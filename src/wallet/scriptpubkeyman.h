@@ -151,7 +151,7 @@ public:
     virtual isminetype IsMine(const CScript& script) const { return ISMINE_NO; }
 
     virtual bool GetReservedDestination(const OutputType type, bool internal, CTxDestination& address, int64_t& index, CKeyPool& keypool) { return false; }
-    virtual void KeepDestination(int64_t index) {}
+    virtual void KeepDestination(const OutputType type, int64_t index) {}
     virtual void ReturnDestination(int64_t index, bool internal, const CTxDestination& addr) {}
 
     virtual bool TopUp(unsigned int size = 0) { return false; }
@@ -250,7 +250,7 @@ private:
     std::map<int64_t, CKeyID> m_reserved_key_to_index;
 
     //! Fetches a key from the keypool
-    bool GetKeyFromPool(CPubKey &key, bool internal = false);
+    bool GetKeyFromPool(CPubKey &key, const OutputType type, bool internal = false);
 
     /**
      * Reserves a key from the keypool and sets nIndex to its index
@@ -276,7 +276,7 @@ public:
     bool EncryptKeys(CKeyingMaterial& vMasterKeyIn);
 
     bool GetReservedDestination(const OutputType type, bool internal, CTxDestination& address, int64_t& index, CKeyPool& keypool) override;
-    void KeepDestination(int64_t index) override;
+    void KeepDestination(const OutputType type, int64_t index) override;
     void ReturnDestination(int64_t index, bool internal, const CTxDestination&) override;
 
     bool TopUp(unsigned int size = 0) override;

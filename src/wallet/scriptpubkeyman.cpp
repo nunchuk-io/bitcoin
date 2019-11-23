@@ -18,7 +18,7 @@ bool LegacyScriptPubKeyMan::GetNewDestination(const OutputType type, CTxDestinat
 
     // Generate a new key that is added to wallet
     CPubKey new_key;
-    if (!GetKeyFromPool(new_key)) {
+    if (!GetKeyFromPool(new_key, type)) {
         error = "Error: Keypool ran out, please call keypoolrefill first";
         return false;
     }
@@ -1087,14 +1087,14 @@ void LegacyScriptPubKeyMan::AddKeypoolPubkeyWithDB(const CPubKey& pubkey, const 
     m_pool_key_to_index[pubkey.GetID()] = index;
 }
 
-void LegacyScriptPubKeyMan::KeepDestination(int64_t nIndex)
+void LegacyScriptPubKeyMan::KeepDestination(const OutputType type, int64_t nIndex)
 {
     // Remove from key pool
     WalletBatch batch(m_storage.GetDatabase());
     batch.ErasePool(nIndex);
     CPubKey pk;
     assert(GetPubKey(m_reserved_key_to_index.at(nIndex), pk));
-    LearnAllRelatedScripts(pk);
+    LearnRelatedScripts(pk, type);
     m_reserved_key_to_index.erase(nIndex);
     WalletLogPrintf("keypool keep %d\n", nIndex);
 }
@@ -1119,7 +1119,7 @@ void LegacyScriptPubKeyMan::ReturnDestination(int64_t nIndex, bool fInternal, co
     WalletLogPrintf("keypool return %d\n", nIndex);
 }
 
-bool LegacyScriptPubKeyMan::GetKeyFromPool(CPubKey& result, bool internal)
+bool LegacyScriptPubKeyMan::GetKeyFromPool(CPubKey& result, const OutputType type, bool internal)
 {
     if (!CanGetAddresses(internal)) {
         return false;
@@ -1135,7 +1135,7 @@ bool LegacyScriptPubKeyMan::GetKeyFromPool(CPubKey& result, bool internal)
             result = GenerateNewKey(batch, internal);
             return true;
         }
-        KeepDestination(nIndex);
+        KeepDestination(type, nIndex);
         result = keypool.vchPubKey;
     }
     return true;
