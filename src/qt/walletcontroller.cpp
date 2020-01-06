@@ -209,7 +209,7 @@ void CreateWalletActivity::createWallet()
     showProgressDialog(tr("Creating Wallet <b>%1</b>...").arg(m_create_wallet_dialog->walletName().toHtmlEscaped()));
 
     std::string name = m_create_wallet_dialog->walletName().toStdString();
-    uint64_t flags = 0;
+    uint64_t flags = WALLET_FLAG_DESCRIPTORS;
     if (m_create_wallet_dialog->isDisablePrivateKeysChecked()) {
         flags |= WALLET_FLAG_DISABLE_PRIVATE_KEYS;
     }
