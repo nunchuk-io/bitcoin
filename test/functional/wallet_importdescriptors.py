@@ -19,6 +19,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.descriptors import descsum_create
 from test_framework.util import (
     assert_equal,
+    assert_greater_than,
 )
 from test_framework.wallet_util import (
     get_key,
@@ -286,6 +287,86 @@ class ImportDescriptorsTest(BitcoinTestFramework):
         self.nodes[0].generate(6)
         self.sync_all()
         assert_equal(wmulti_pub.getbalance(), wmulti_priv.getbalance())
+
+        # Make sure we store correct origin info for sorted multisig
+        self.log.info('Test sorted multisig origin info order')
+        self.nodes[1].createwallet(wallet_name="wsortedmulti", disable_private_keys=True, blank=True, descriptors=True)
+        wsortedmulti = self.nodes[1].get_wallet_rpc("wsortedmulti")
+        assert_equal(wsortedmulti.getwalletinfo()['keypoolsize'], 0)
+
+        self.test_importdesc({"desc":"wsh(sortedmulti(2,[7b2d0242/84h/0h/0h]tpubDCJtdt5dgJpdhW4MtaVYDhG4T4tF6jcLR1PxL43q9pq1mxvXgMS9Mzw1HnXG15vxUGQJMMSqCQHMTy3F1eW5VkgVroWzchsPD5BUojrcWs8/*,[59b09cd6/84h/0h/0h]tpubDDBF2BTR6s8drwrfDei8WxtckGuSm1cyoKxYY1QaKSBFbHBYQArWhHPA6eJrzZej6nfHGLSURYSLHr7GuYch8aY5n61tGqgn8b4cXrMuoPH/*,[e81a0532/84h/0h/0h]tpubDCsWoW1kuQB9kG5MXewHqkbjPtqPueRnXju7uM2NK7y3JYb2ajAZ9EiuZXNNuE4661RAfriBWhL8UsnAPpk8zrKKnZw1Ug7X4oHgMdZiU4E/*))#5ghsxlcf",
+                            "active": True,
+                            "range": 1000,
+                            "next_index": 0,
+                            "timestamp": "now",
+                            "watchonly":True},
+                            success=True,
+                            wallet=wsortedmulti)
+
+        self.test_importdesc({"desc":"wsh(sortedmulti(2,[7b2d0242/84h/0h/0h]tpubDCJtdt5dgJpdhW4MtaVYDhG4T4tF6jcLR1PxL43q9pq1mxvXgMS9Mzw1HnXG15vxUGQJMMSqCQHMTy3F1eW5VkgVroWzchsPD5BUojrcWs8/1/*,[59b09cd6/84h/0h/0h]tpubDDBF2BTR6s8drwrfDei8WxtckGuSm1cyoKxYY1QaKSBFbHBYQArWhHPA6eJrzZej6nfHGLSURYSLHr7GuYch8aY5n61tGqgn8b4cXrMuoPH/1/*,[e81a0532/84h/0h/0h]tpubDCsWoW1kuQB9kG5MXewHqkbjPtqPueRnXju7uM2NK7y3JYb2ajAZ9EiuZXNNuE4661RAfriBWhL8UsnAPpk8zrKKnZw1Ug7X4oHgMdZiU4E/1/*))#5xql8mum",
+                            "active": True,
+                            "internal": True,
+                            "range": 1000,
+                            "next_index": 0,
+                            "timestamp": "now",
+                            "watchonly":True},
+                            success=True,
+                            wallet=wsortedmulti)
+
+        address1 = wsortedmulti.getnewaddress()
+        address1_unsorted = wmulti_pub.getnewaddress()
+        for _ in range(5):
+            wmulti_pub.getnewaddress()
+            wsortedmulti.getnewaddress()
+        address2 = wsortedmulti.getnewaddress()
+        address2_unsorted = wmulti_pub.getnewaddress()
+
+        # address2 is the same as its unsorted counterpart:
+        assert_equal(wmulti_pub.getaddressinfo(address2)["solvable"], True)
+        assert_equal(address2, address2_unsorted)
+        assert_equal(wsortedmulti.getaddressinfo(address2)["desc"], wmulti_pub.getaddressinfo(address2)["desc"])
+
+        # address1 is different from its unsorted counterpart:
+        assert_equal(wmulti_pub.getaddressinfo(address1)["solvable"], False)
+        desc_sorted = wsortedmulti.getaddressinfo(address1)["desc"]
+        desc_unsorted = wmulti_pub.getaddressinfo(address1_unsorted)["desc"]
+        origins = [
+            "[7b2d0242/84'/0'/0'/2]037e98fc0cb3550864943c6d4283234b2b8592eea95f63dd70bfc27d197e552cfe",
+            "[59b09cd6/84'/0'/0'/2]02e2fa75d9f4fbf3f97edceedff390ee19a212983f4612227d0abb51912362f8a5",
+            "[e81a0532/84'/0'/0'/2]0389c285fd5d478d7a05b6c339e31cb793a385be9f95b03a4bcb11f82e404e280e"
+        ]
+        for origin in origins:
+            assert_greater_than(desc_sorted.find(origin), -1)
+            assert_greater_than(desc_unsorted.find(origin), -1)
+
+        # Fund address1:
+        txid = w0.sendtoaddress(address1, 10)
+        vout = w0.gettransaction(txid)["details"][0]["vout"]
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        # Create PSBT
+        dest = w1.getnewaddress()
+        psbt_base64 = wsortedmulti.walletcreatefundedpsbt([{"txid": txid, "vout": vout}], {dest:1}, 0, {}, True)['psbt']
+        psbt = w1.decodepsbt(psbt_base64)
+
+        assert_equal(psbt["inputs"][0]["witness_utxo"]["scriptPubKey"]["address"], address1)
+
+        assert_equal(psbt["inputs"][0]["bip32_derivs"][0], {
+          "pubkey": "02e2fa75d9f4fbf3f97edceedff390ee19a212983f4612227d0abb51912362f8a5",
+          "master_fingerprint": "59b09cd6",
+          "path": "m/84'/0'/0'/2"
+        })
+        assert_equal(psbt["inputs"][0]["bip32_derivs"][1], {
+          "pubkey": "037e98fc0cb3550864943c6d4283234b2b8592eea95f63dd70bfc27d197e552cfe",
+          "master_fingerprint": "7b2d0242",
+          "path": "m/84'/0'/0'/2"
+        })
+        assert_equal(psbt["inputs"][0]["bip32_derivs"][2], {
+          "pubkey": "0389c285fd5d478d7a05b6c339e31cb793a385be9f95b03a4bcb11f82e404e280e",
+          "master_fingerprint": "e81a0532",
+          "path": "m/84'/0'/0'/2"
+        })
 
 if __name__ == '__main__':
     ImportDescriptorsTest().main()
