@@ -14,7 +14,7 @@ std::string TransactionErrorString(const TransactionError err)
         case TransactionError::OK:
             return "No error";
         case TransactionError::MISSING_INPUTS:
-            return "Missing inputs";
+            return "Inputs missing or spent";
         case TransactionError::ALREADY_IN_CHAIN:
             return "Transaction already in block chain";
         case TransactionError::P2P_DISABLED:
@@ -24,11 +24,11 @@ std::string TransactionErrorString(const TransactionError err)
         case TransactionError::MEMPOOL_ERROR:
             return "AcceptToMemoryPool failed";
         case TransactionError::INVALID_PSBT:
-            return "PSBT is not sane";
+            return "PSBT is not well-formed";
         case TransactionError::PSBT_MISMATCH:
             return "PSBTs not compatible (different transactions)";
         case TransactionError::SIGHASH_MISMATCH:
-            return "Specified sighash value does not match existing value";
+            return "Specified sighash value does not match value stored in PSBT";
         case TransactionError::MAX_FEE_EXCEEDED:
             return "Fee exceeds maximum configured by -maxtxfee";
         // no default case, so the compiler can warn about missing cases
