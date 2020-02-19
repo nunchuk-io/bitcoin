@@ -3534,6 +3534,21 @@ ExternalSigner CWallet::GetExternalSigner() {
 }
 #endif
 
+bool CWallet::DisplayAddress(const CTxDestination& dest)
+{
+#ifdef ENABLE_EXTERNAL_SIGNER
+    CScript scriptPubKey = GetScriptForDestination(dest);
+    std::unique_ptr<SigningProvider> provider = GetSolvingProvider(scriptPubKey);
+    auto descriptor = InferDescriptor(scriptPubKey, *provider);
+
+    ExternalSigner signer = GetExternalSigner();
+    signer.displayAddress(descriptor->ToString());
+    return true;
+#else
+    return false;
+#endif
+}
+
 void CWallet::LockCoin(const COutPoint& output)
 {
     AssertLockHeld(cs_wallet);
