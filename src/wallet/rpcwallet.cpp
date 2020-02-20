@@ -2942,7 +2942,7 @@ static UniValue listunspent(const JSONRPCRequest& request)
                 entry.pushKV("label", i->second.name);
             }
 
-            std::unique_ptr<SigningProvider> provider = pwallet->GetSolvingProvider(scriptPubKey);
+            std::unique_ptr<SolvingProvider> provider = pwallet->GetSolvingProvider(scriptPubKey);
             if (provider) {
                 if (scriptPubKey.IsPayToScriptHash()) {
                     const CScriptID& hash = CScriptID(boost::get<ScriptHash>(address));
@@ -2982,7 +2982,7 @@ static UniValue listunspent(const JSONRPCRequest& request)
         entry.pushKV("spendable", out.fSpendable);
         entry.pushKV("solvable", out.fSolvable);
         if (out.fSolvable) {
-            std::unique_ptr<SigningProvider> provider = pwallet->GetSolvingProvider(scriptPubKey);
+            std::unique_ptr<SolvingProvider> provider = pwallet->GetSolvingProvider(scriptPubKey);
             if (provider) {
                 auto descriptor = InferDescriptor(scriptPubKey, *provider);
                 entry.pushKV("desc", descriptor->ToString());
@@ -3593,7 +3593,7 @@ UniValue rescanblockchain(const JSONRPCRequest& request)
 class DescribeWalletAddressVisitor : public boost::static_visitor<UniValue>
 {
 public:
-    const SigningProvider * const provider;
+    const SolvingProvider * const provider;
 
     void ProcessSubScript(const CScript& subscript, UniValue& obj) const
     {
@@ -3629,7 +3629,7 @@ public:
         }
     }
 
-    explicit DescribeWalletAddressVisitor(const SigningProvider* _provider) : provider(_provider) {}
+    explicit DescribeWalletAddressVisitor(const SolvingProvider* _provider) : provider(_provider) {}
 
     UniValue operator()(const CNoDestination& dest) const { return UniValue(UniValue::VOBJ); }
 
@@ -3687,7 +3687,7 @@ static UniValue DescribeWalletAddress(CWallet* pwallet, const CTxDestination& de
     UniValue ret(UniValue::VOBJ);
     UniValue detail = DescribeAddress(dest);
     CScript script = GetScriptForDestination(dest);
-    std::unique_ptr<SigningProvider> provider = nullptr;
+    std::unique_ptr<SolvingProvider> provider = nullptr;
     if (pwallet) {
         provider = pwallet->GetSolvingProvider(script);
     }
@@ -3790,7 +3790,7 @@ UniValue getaddressinfo(const JSONRPCRequest& request)
     CScript scriptPubKey = GetScriptForDestination(dest);
     ret.pushKV("scriptPubKey", HexStr(scriptPubKey.begin(), scriptPubKey.end()));
 
-    std::unique_ptr<SigningProvider> provider = pwallet->GetSolvingProvider(scriptPubKey);
+    std::unique_ptr<SolvingProvider> provider = pwallet->GetSolvingProvider(scriptPubKey);
 
     isminetype mine = pwallet->IsMine(dest);
     ret.pushKV("ismine", bool(mine & ISMINE_SPENDABLE));

@@ -874,7 +874,7 @@ std::unique_ptr<DescriptorImpl> ParseScript(Span<const char>& sp, ParseScriptCon
     return nullptr;
 }
 
-std::unique_ptr<PubkeyProvider> InferPubkey(const CPubKey& pubkey, ParseScriptContext, const SigningProvider& provider)
+std::unique_ptr<PubkeyProvider> InferPubkey(const CPubKey& pubkey, ParseScriptContext, const SolvingProvider& provider)
 {
     std::unique_ptr<PubkeyProvider> key_provider = MakeUnique<ConstPubkeyProvider>(pubkey);
     KeyOriginInfo info;
@@ -884,7 +884,7 @@ std::unique_ptr<PubkeyProvider> InferPubkey(const CPubKey& pubkey, ParseScriptCo
     return key_provider;
 }
 
-std::unique_ptr<DescriptorImpl> InferScript(const CScript& script, ParseScriptContext ctx, const SigningProvider& provider)
+std::unique_ptr<DescriptorImpl> InferScript(const CScript& script, ParseScriptContext ctx, const SolvingProvider& provider)
 {
     std::vector<std::vector<unsigned char>> data;
     txnouttype txntype = Solver(script, data);
@@ -1005,7 +1005,7 @@ std::string GetDescriptorChecksum(const std::string& descriptor)
     return ret;
 }
 
-std::unique_ptr<Descriptor> InferDescriptor(const CScript& script, const SigningProvider& provider)
+std::unique_ptr<Descriptor> InferDescriptor(const CScript& script, const SolvingProvider& provider)
 {
     return InferScript(script, ParseScriptContext::TOP, provider);
 }

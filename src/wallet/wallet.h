@@ -1177,9 +1177,9 @@ public:
     //! Get the ScriptPubKeyMan by id
     ScriptPubKeyMan* GetScriptPubKeyMan(const uint256& id) const;
 
-    //! Get the SigningProvider for a script
-    std::unique_ptr<SigningProvider> GetSolvingProvider(const CScript& script) const;
-    std::unique_ptr<SigningProvider> GetSolvingProvider(const CScript& script, SignatureData& sigdata) const;
+    //! Get the SolvingProvider for a script
+    std::unique_ptr<SolvingProvider> GetSolvingProvider(const CScript& script) const;
+    std::unique_ptr<SolvingProvider> GetSolvingProvider(const CScript& script, SignatureData& sigdata) const;
 
     //! Get the LegacyScriptPubKeyMan which is used for all types, internal, and external.
     LegacyScriptPubKeyMan* GetLegacyScriptPubKeyMan() const;

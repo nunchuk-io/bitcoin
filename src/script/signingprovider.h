@@ -14,17 +14,23 @@
 
 struct KeyOriginInfo;
 
-/** An interface to be implemented by keystores that support signing. */
-class SigningProvider
+/** An interface to be implemented by keystores that don't support signing. */
+class SolvingProvider
 {
 public:
-    virtual ~SigningProvider() {}
+    virtual ~SolvingProvider() {}
     virtual bool GetCScript(const CScriptID &scriptid, CScript& script) const { return false; }
     virtual bool HaveCScript(const CScriptID &scriptid) const { return false; }
     virtual bool GetPubKey(const CKeyID &address, CPubKey& pubkey) const { return false; }
+    virtual bool GetKeyOrigin(const CKeyID& keyid, KeyOriginInfo& info) const { return false; }
+};
+
+/** An interface to be implemented by keystores that support signing. */
+class SigningProvider : public SolvingProvider
+{
+public:
     virtual bool GetKey(const CKeyID &address, CKey& key) const { return false; }
     virtual bool HaveKey(const CKeyID &address) const { return false; }
-    virtual bool GetKeyOrigin(const CKeyID& keyid, KeyOriginInfo& info) const { return false; }
 };
 
 extern const SigningProvider& DUMMY_SIGNING_PROVIDER;

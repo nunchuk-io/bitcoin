@@ -105,6 +105,6 @@ std::string GetDescriptorChecksum(const std::string& descriptor);
  *   returned (which is not IsSolvable()).
  * - Failing that, a "raw()" descriptor is returned.
  */
-std::unique_ptr<Descriptor> InferDescriptor(const CScript& script, const SigningProvider& provider);
+std::unique_ptr<Descriptor> InferDescriptor(const CScript& script, const SolvingProvider& provider);
 
 #endif // BITCOIN_SCRIPT_DESCRIPTOR_H

@@ -1400,7 +1400,7 @@ bool CWallet::DummySignInput(CTxIn &tx_in, const CTxOut &txout, bool use_max_sig
     const CScript& scriptPubKey = txout.scriptPubKey;
     SignatureData sigdata;
 
-    std::unique_ptr<SigningProvider> provider = GetSolvingProvider(scriptPubKey);
+    std::unique_ptr<SolvingProvider> provider = GetSolvingProvider(scriptPubKey);
     if (!provider) {
         // We don't know about this scriptpbuKey;
         return false;
@@ -2164,7 +2164,7 @@ void CWallet::AvailableCoins(interfaces::Chain::Lock& locked_chain, std::vector<
                 continue;
             }
 
-            std::unique_ptr<SigningProvider> provider = GetSolvingProvider(wtx.tx->vout[i].scriptPubKey);
+            std::unique_ptr<SolvingProvider> provider = GetSolvingProvider(wtx.tx->vout[i].scriptPubKey);
 
             bool solvable = provider ? IsSolvable(*provider, wtx.tx->vout[i].scriptPubKey) : false;
             bool spendable = ((mine & ISMINE_SPENDABLE) != ISMINE_NO) || (((mine & ISMINE_WATCH_ONLY) != ISMINE_NO) && (coinControl && coinControl->fAllowWatchOnly && solvable));
@@ -2913,7 +2913,7 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
 
                 nBytes = CalculateMaximumSignedTxSize(CTransaction(txNew), this, coin_control.fAllowWatchOnly);
                 if (nBytes < 0) {
-                    strFailReason = _("Signing transaction failed").translated;
+                    strFailReason = _("Signing transaction failed: unable to calculate size").translated;
                     return false;
                 }
 
@@ -3010,7 +3010,7 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
         if (sign)
         {
             if (!SignTransaction(txNew)) {
-                strFailReason = _("Signing transaction failed").translated;
+                strFailReason = _("Signing the transaction failed").translated;
                 return false;
             }
         }
@@ -4287,13 +4287,13 @@ ScriptPubKeyMan* CWallet::GetScriptPubKeyMan(const uint256& id) const
     return nullptr;
 }
 
-std::unique_ptr<SigningProvider> CWallet::GetSolvingProvider(const CScript& script) const
+std::unique_ptr<SolvingProvider> CWallet::GetSolvingProvider(const CScript& script) const
 {
     SignatureData sigdata;
     return GetSolvingProvider(script, sigdata);
 }
 
-std::unique_ptr<SigningProvider> CWallet::GetSolvingProvider(const CScript& script, SignatureData& sigdata) const
+std::unique_ptr<SolvingProvider> CWallet::GetSolvingProvider(const CScript& script, SignatureData& sigdata) const
 {
     for (const auto& spk_man_pair : m_spk_managers) {
         if (spk_man_pair.second->CanProvide(script, sigdata)) {

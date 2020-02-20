@@ -206,9 +206,9 @@ public:
 
     virtual const CKeyMetadata* GetMetadata(const CTxDestination& dest) const { return nullptr; }
 
-    virtual std::unique_ptr<SigningProvider> GetSolvingProvider(const CScript& script) const { return nullptr; }
+    virtual std::unique_ptr<SolvingProvider> GetSolvingProvider(const CScript& script) const { return nullptr; }
 
-    /** Whether this ScriptPubKeyMan can provide a SigningProvider (via GetSolvingProvider) that, combined with
+    /** Whether this ScriptPubKeyMan can provide a SolvingProvider (via GetSolvingProvider) that, combined with
       * sigdata, can produce solving data.
       */
     virtual bool CanProvide(const CScript& script, SignatureData& sigdata) { return false; }
@@ -356,7 +356,7 @@ public:
 
     bool CanGetAddresses(bool internal = false) override;
 
-    std::unique_ptr<SigningProvider> GetSolvingProvider(const CScript& script) const override;
+    std::unique_ptr<SolvingProvider> GetSolvingProvider(const CScript& script) const override;
 
     bool CanProvide(const CScript& script, SignatureData& sigdata) override;
 
@@ -462,18 +462,16 @@ public:
 };
 
 /** Wraps a LegacyScriptPubKeyMan so that it can be returned in a new unique_ptr. Does not provide privkeys */
-class LegacySigningProvider : public SigningProvider
+class LegacySolvingProvider : public SolvingProvider
 {
 private:
     const LegacyScriptPubKeyMan& m_spk_man;
 public:
-    LegacySigningProvider(const LegacyScriptPubKeyMan& spk_man) : m_spk_man(spk_man) {}
+    LegacySolvingProvider(const LegacyScriptPubKeyMan& spk_man) : m_spk_man(spk_man) {}
 
     bool GetCScript(const CScriptID &scriptid, CScript& script) const override { return m_spk_man.GetCScript(scriptid, script); }
     bool HaveCScript(const CScriptID &scriptid) const override { return m_spk_man.HaveCScript(scriptid); }
     bool GetPubKey(const CKeyID &address, CPubKey& pubkey) const override { return m_spk_man.GetPubKey(address, pubkey); }
-    bool GetKey(const CKeyID &address, CKey& key) const override { return false; }
-    bool HaveKey(const CKeyID &address) const override { return false; }
     bool GetKeyOrigin(const CKeyID& keyid, KeyOriginInfo& info) const override { return m_spk_man.GetKeyOrigin(keyid, info); }
 };
 
