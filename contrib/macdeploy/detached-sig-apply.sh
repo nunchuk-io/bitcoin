@@ -12,6 +12,7 @@ ARCH=x86_64
 ROOTDIR=dist
 TEMPDIR=signed.temp
 OUTDIR=signed-app
+CODESIGN=codesign
 
 if [ -z "$UNSIGNED" ]; then
   echo "usage: $0 <unsigned app> <signature>"
@@ -39,6 +40,9 @@ find ${TEMPDIR} -name "*.sign" | while read i; do
   SIZE=$(stat -c %s "${i}")
   TARGET_FILE="$(echo "${i}" | sed 's/\.sign$//')"
 
+  echo "Verifying signature"
+  ${CODESIGN} -v "${TARGET_FILE}" --detached "${i}"
+
   echo "Allocating space for the signature of size ${SIZE} in ${TARGET_FILE}"
   ${CODESIGN_ALLOCATE} -i "${TARGET_FILE}" -a ${ARCH} ${SIZE} -o "${i}.tmp"
 
@@ -50,6 +54,7 @@ find ${TEMPDIR} -name "*.sign" | while read i; do
   dd if="$i" of="${i}.tmp" bs=1 seek=${OFFSET} count=${SIZE} 2>/dev/null
   mv "${i}.tmp" "${TARGET_FILE}"
   rm "${i}"
+
   echo "Success."
 done
 mv ${TEMPDIR}/${ROOTDIR} ${OUTDIR}
