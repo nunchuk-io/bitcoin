@@ -41,6 +41,11 @@ public:
                                              bool ignore_incoming_txs);
     virtual ~PeerManager() { }
 
+    /** Attempt to manually fetch block from a given node.
+      * A refactor of in flight block tracking could remove the need for passing CTxMemPool in
+      */
+    virtual bool FetchBlock(const NodeId nodeid, const CBlockIndex* pindex, CTxMemPool& mempool) = 0;
+
     /** Get statistics from node state */
     virtual bool GetNodeStateStats(NodeId nodeid, CNodeStateStats& stats) = 0;
 

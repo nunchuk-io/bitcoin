@@ -246,6 +246,7 @@ public:
 
     /** Implement PeerManager */
     void CheckForStaleTipAndEvictPeers() override;
+    bool FetchBlock(const NodeId nodeid, const CBlockIndex* pindex, CTxMemPool& mempool) override;
     bool GetNodeStateStats(NodeId nodeid, CNodeStateStats& stats) override;
     bool IgnoresIncomingTxs() override { return m_ignore_incoming_txs; }
     void SetBestHeight(int height) override { m_best_height = height; };
@@ -262,6 +263,7 @@ private:
 
     /** Retrieve unbroadcast transactions from the mempool and reattempt sending to peers */
     void ReattemptInitialBroadcast(CScheduler& scheduler) const;
+
 
     /** Get a shared pointer to the Peer object.
      *  May return an empty shared_ptr if the Peer object can't be found. */
@@ -1293,6 +1295,33 @@ bool PeerManagerImpl::MaybePunishNodeForTx(NodeId nodeid, const TxValidationStat
         LogPrint(BCLog::NET, "peer=%d: %s\n", nodeid, message);
     }
     return false;
+}
+
+bool PeerManagerImpl::FetchBlock(const NodeId nodeid, const CBlockIndex* pindex, CTxMemPool& mempool) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
+{
+    PeerRef peer = GetPeerRef(nodeid);
+    if (peer == nullptr) return false;
+    uint32_t nFetchFlags = 0;
+    CNodeState* state = State(nodeid);
+    if (state == nullptr) {
+        return false;
+    }
+    const int node_sync_height = state->pindexBestKnownBlock ? state->pindexBestKnownBlock->nHeight : -1;
+    if (pindex->nHeight > node_sync_height) {
+        return false;
+    }
+    if (state->fHaveWitness) {
+        nFetchFlags |= MSG_WITNESS_FLAG;
+    }
+    std::vector<CInv> vInv(1);
+    vInv[0] = CInv(MSG_BLOCK | nFetchFlags, pindex->GetBlockHash());
+    bool success = m_connman.ForNode(nodeid, [this, vInv](CNode* pnode) {
+        const CNetMsgMaker msgMaker(pnode->GetCommonVersion());
+        this->m_connman.PushMessage(pnode, msgMaker.Make(NetMsgType::GETDATA, vInv));
+        return true;
+    });
+    MarkBlockAsInFlight(mempool, nodeid, pindex->GetBlockHash(), pindex);
+    return success;
 }
 
 
