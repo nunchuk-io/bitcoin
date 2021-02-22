@@ -926,6 +926,33 @@ if test x$TARGET_OS = xdarwin; then
   AX_CHECK_LINK_FLAG([[-Wl,-bind_at_load]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -Wl,-bind_at_load"],, [[$LDFLAG_WERROR]])
 fi
 
+if test x$enable_determinism = xyes; then
+  if test x$TARGET_OS = xwindows; then
+    AX_CHECK_LINK_FLAG([[-Wl,--no-insert-timestamp]], [LDFLAGS="$LDFLAGS -Wl,--no-insert-timestamp"],, [[$LDFLAG_WERROR]])
+  fi
+fi
+
+#iOS part
+if test x$TARGET_OS = xdarwin; then
+    AC_MSG_CHECKING([for Apple iOS targets])
+    AC_PREPROC_IFELSE([AC_LANG_SOURCE([
+        #if defined(__APPLE__) && defined(__MACH__)
+        #include <TargetConditionals.h>
+        #  if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
+           // success: ios or simulator
+        #  else
+        #    error non-iphone
+        #  endif
+        #else
+        #error non-apple
+        #endif
+    ])], [
+        AC_MSG_RESULT([yes]); AC_DEFINE(APPLE_TARGET_IOS, 1,[Define to 1 if (TARGET_OS_PHONE || TARGET_IPHONE_SIMULATOR) is set])
+    ], [
+        AC_MSG_RESULT([no])
+    ])
+fi
+
 AC_CHECK_HEADERS([endian.h sys/endian.h byteswap.h stdio.h stdlib.h unistd.h strings.h sys/types.h sys/stat.h sys/select.h sys/prctl.h sys/sysctl.h vm/vm_param.h sys/vmmeter.h sys/resources.h])
 
 AC_CHECK_DECLS([getifaddrs, freeifaddrs],[CHECK_SOCKET],,

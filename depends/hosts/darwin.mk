@@ -90,24 +90,15 @@ $(foreach TOOL,$(cctools_TOOLS),$(eval darwin_$(TOOL) = $$(build_prefix)/bin/$$(
 #         include search paths, as that would be wrong in general but would also
 #         break #include_next's.
 #
-darwin_CC=env -u C_INCLUDE_PATH -u CPLUS_INCLUDE_PATH \
-              -u OBJC_INCLUDE_PATH -u OBJCPLUS_INCLUDE_PATH -u CPATH \
-              -u LIBRARY_PATH \
-            $(clang_prog) --target=$(host) -mmacosx-version-min=$(OSX_MIN_VERSION) \
-              -B$(build_prefix)/bin -mlinker-version=$(LD64_VERSION) \
-              -isysroot$(OSX_SDK) \
-              -Xclang -internal-externc-isystem$(clang_resource_dir)/include \
-              -Xclang -internal-externc-isystem$(OSX_SDK)/usr/include
-darwin_CXX=env -u C_INCLUDE_PATH -u CPLUS_INCLUDE_PATH \
-               -u OBJC_INCLUDE_PATH -u OBJCPLUS_INCLUDE_PATH -u CPATH \
-               -u LIBRARY_PATH \
-             $(clangxx_prog) --target=$(host) -mmacosx-version-min=$(OSX_MIN_VERSION) \
-               -B$(build_prefix)/bin -mlinker-version=$(LD64_VERSION) \
-               -isysroot$(OSX_SDK) \
-               -stdlib=libc++ \
-               -stdlib++-isystem$(OSX_SDK)/usr/include/c++/v1 \
-               -Xclang -internal-externc-isystem$(clang_resource_dir)/include \
-               -Xclang -internal-externc-isystem$(OSX_SDK)/usr/include
+IOS_MIN_VERSION=13.2
+IOS_SDK_VERSION=13.2
+IOS_SDK=$(shell xcrun --sdk iphoneos --show-sdk-path)
+
+darwin_CC=clang -target $(host) -mmacosx-version-min=$(OSX_MIN_VERSION) --sysroot $(OSX_SDK) -mlinker-version=$(LD64_VERSION)
+darwin_CXX=clang++ -target $(host) -mmacosx-version-min=$(OSX_MIN_VERSION) --sysroot $(OSX_SDK) -mlinker-version=$(LD64_VERSION) -stdlib=libc++
+
+aarch64_darwin_CC=$(shell xcrun -f clang) -target $(host) -arch arm64 -miphoneos-version-min=$(IOS_MIN_VERSION) --sysroot $(IOS_SDK) -mlinker-version=$(LD64_VERSION)
+aarch64_darwin_CXX=$(shell xcrun -f clang++) -target $(host) -arch arm64 -miphoneos-version-min=$(IOS_MIN_VERSION) --sysroot $(IOS_SDK) -mlinker-version=$(LD64_VERSION) -stdlib=libc++
 
 darwin_CFLAGS=-pipe
 darwin_CXXFLAGS=$(darwin_CFLAGS)
