@@ -26,8 +26,8 @@ build_script:
   - cd build
   - if "%platform%"=="x64" set CMAKE_GENERATOR=%CMAKE_GENERATOR% Win64
   - cmake --version
-  - cmake .. -G "%CMAKE_GENERATOR%" -DCRC32C_USE_GLOG=0
-      -DCMAKE_CONFIGURATION_TYPES="%CONFIGURATION%"
+  - cmake .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_GENERATOR_PLATFORM%"
+      -DCMAKE_CONFIGURATION_TYPES="%CONFIGURATION%" -DCRC32C_USE_GLOG=0
   - cmake --build . --config "%CONFIGURATION%"
   - cd ..
 
